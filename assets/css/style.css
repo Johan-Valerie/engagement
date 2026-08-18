@@ -33,13 +33,13 @@
 
   --vh:100vh;
 }
-/* LARGE viewport, not dynamic. The phone's URL bar is translucent and the
-   page is painted underneath it, so dvh — which stops at the bar's top edge
-   — left the next section showing through the glass. lvh includes the area
-   behind the bar, so what shows through is this section's own background.
-   (100vh already means the large viewport on mobile; lvh states it and is
-   exact on desktop too.) */
-@supports (height:100lvh){ :root{ --vh:100lvh; } }
+/* dvh, exactly as the wedding invitation does it. That site has no
+   theme-color meta, so the browser keeps its own opaque toolbar and the page
+   is never painted underneath it — which is why dvh has always been correct
+   there. This page now drops theme-color too, so the same holds here.
+   (If the bar ever renders see-through again, this is the line to switch
+   to 100lvh — that sizes pages behind the bar instead.) */
+@supports (height:100dvh){ :root{ --vh:100dvh; } }
 
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
