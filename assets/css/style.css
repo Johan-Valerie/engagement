@@ -69,7 +69,7 @@ a{color:inherit;text-decoration:none}
 /* landing.jpg is 2:3; on a wide desktop viewport cover-fit shows only a middle
    band and decapitates the couple. Anchoring the crop high keeps faces in frame.
    No effect on phones, where the portrait image has no vertical overflow.     */
-#cover-bg{object-position:50% 22%}
+#cover-bg{object-position:50% 64%}   /* couple sits ~59% down the new aerial photo */
 
 .bg-scrim{
   position:absolute;inset:0;z-index:1;
@@ -211,7 +211,10 @@ a{color:inherit;text-decoration:none}
 
 #cover-section{
   position:fixed;inset:0;z-index:10;
-  height:100svh;width:100%;
+  /* no explicit height: inset:0 tracks the visual viewport exactly, so the
+     cover stays full-screen whether the browser bar is expanded or collapsed.
+     A 100svh height left a gap (page 2 peeking) once the bar collapsed. */
+  width:100%;
   overflow:hidden;
   transition:opacity 1s,transform 1s;
 }
@@ -323,7 +326,8 @@ a{color:inherit;text-decoration:none}
 
 .snap-section{
   position:relative;
-  min-height:100svh;
+  min-height:100svh;   /* fallback for browsers without dvh */
+  min-height:100dvh;   /* tracks the live viewport, so no page peeks below */
   scroll-snap-align:start;
   scroll-snap-stop:always;
   overflow-y:auto;
@@ -362,7 +366,7 @@ a{color:inherit;text-decoration:none}
 /* Line wipe traced from the reference's Lottie (scroll-white.json, 30fps/60f):
    draws downward 0-43%, erases downward 43-63%, rests until the 2s loop. */
 .scroll-cue i{
-  width:1px;height:34px;background:linear-gradient(var(--ghost-60),transparent);
+  width:1px;height:34px;background:var(--ghost-60);   /* solid, like the reference */
   animation:cue-line 2s ease-in-out infinite;
 }
 @keyframes cue-line{
