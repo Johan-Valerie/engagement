@@ -129,9 +129,10 @@ a{color:inherit;text-decoration:none}
 }
 /* Three beats, opacity only — nothing moves.
    0.4-1.9s  "THE ENGAGEMENT OF" in, hold, out
-   1.9-3.1s  monogram fades in, above the names
-   3.0-4.2s  "VALERIE & JOHAN" fades in beneath it              */
-.first-text,.second-text{
+   1.9-3.1s  monogram fades in
+   3.0-4.2s  VALERIE and JOHAN fade in either side of it
+   then a 1.5s hold before the intro clears                     */
+.first-text,.intro-name{
   color:#fff;font-family:var(--display);
   font-size:14px;font-weight:600;letter-spacing:3px;
   opacity:0;white-space:nowrap;
@@ -140,16 +141,19 @@ a{color:inherit;text-decoration:none}
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   animation:1.5s fadeInOut .4s ease-in-out forwards;
 }
+/* VALERIE / crest / JOHAN stacked, everything on the same centre line.
+   align-items:center centres each row independently of its own width. */
 .intro-stack{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  display:flex;flex-direction:column;align-items:center;gap:24px;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+  text-align:center;
 }
+.intro-name{animation:1.2s fadeIn 3s ease-in-out forwards}
 .crest{
-  width:136px;height:auto;
+  flex:0 0 auto;width:68px;height:auto;
   opacity:0;
   animation:1.2s fadeIn 1.9s ease-in-out forwards;
 }
-.second-text{animation:1.2s fadeIn 3s ease-in-out forwards}
 
 @keyframes fadeInOut{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0}}
 @keyframes fadeIn{0%{opacity:0}100%{opacity:.95}}
