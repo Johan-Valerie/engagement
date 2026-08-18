@@ -3,7 +3,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 /* Google Apps Script web-app URL (…/exec). Empty = backend not wired yet. */
-const API_URL = '';
+const API_URL = 'https://script.google.com/macros/s/AKfycby5HHwzTxSv5x0qr-HreHwcgRsov4CWUQgCo_a8RzCdftUt63Der-G85XkMsWPVuwiU9w/exec';
 
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
