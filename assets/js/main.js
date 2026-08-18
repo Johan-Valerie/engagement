@@ -28,9 +28,12 @@ const hidePreloader = () => {
 };
 
 const forceHide = setTimeout(hidePreloader, 10000);          // safety net
-window.addEventListener('load', () => {
-  setTimeout(() => { clearTimeout(forceHide); hidePreloader(); }, 6600);   // last name lands ~5.6s, then a 1s hold
-});
+/* Dismiss exactly 1s after the last beat lands. Anchored to the name's own
+   animationend (~5.6s), not window load — waiting for load made the hold
+   stretch by however long the media took. */
+$$('.intro-name').pop().addEventListener('animationend', () => {
+  setTimeout(() => { clearTimeout(forceHide); hidePreloader(); }, 1000);
+}, { once: true });
 
 /* refreshing always returns to the cover */
 history.scrollRestoration = 'manual';
