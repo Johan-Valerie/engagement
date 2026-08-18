@@ -336,8 +336,11 @@ a{color:inherit;text-decoration:none}
 
 .snap-section{
   position:relative;
-  min-height:100svh;   /* fallback for browsers without dvh */
-  min-height:100dvh;   /* tracks the live viewport, so no page peeks below */
+  /* Large-viewport height: pages extend behind the phone's translucent URL
+     bar, so what shows through it is this page's own background — not a
+     sliver of the next page (which is what dvh gave). On desktop = 100vh. */
+  min-height:100vh;    /* fallback: mobile browsers treat vh as lvh anyway */
+  min-height:100lvh;
   scroll-snap-align:start;
   scroll-snap-stop:always;
   overflow-y:auto;
