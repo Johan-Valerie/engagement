@@ -12,9 +12,11 @@ const params    = new URLSearchParams(location.search);
 const GUEST     = (params.get('to') || '').trim();
 const MAX_PAX   = Math.max(1, parseInt(params.get('max'), 10) || 2);
 
-/* ═══════════ 1 · INTRO / PRELOADER ═══════════ */
+/* #main is the scroll container, not the window — the root is locked so the
+   phone's URL bar can never hide. Every scroll call below targets it. */
+const MAIN = document.getElementById('main');
 
-document.body.style.overflow = 'hidden';
+/* ═══════════ 1 · INTRO / PRELOADER ═══════════ */
 
 const hidePreloader = () => {
   const p = $('#preloader');
@@ -37,7 +39,7 @@ $$('.intro-name').pop().addEventListener('animationend', () => {
 
 /* refreshing always returns to the cover */
 history.scrollRestoration = 'manual';
-window.addEventListener('beforeunload', () => window.scrollTo(0, 0));
+window.addEventListener('beforeunload', () => MAIN.scrollTo(0, 0));
 
 /* ═══════════ 2 · COVER ═══════════ */
 
@@ -89,11 +91,10 @@ function renderIntroGuest () {
 renderIntroGuest();
 
 $('#open-invitation').addEventListener('click', () => {
-  window.scrollTo(0, 0);
+  MAIN.scrollTo(0, 0);
   const cover = $('#cover-section');
   cover.classList.add('hidden');
   document.documentElement.classList.add('unlocked');
-  document.body.style.overflow = 'visible';
 
   setTimeout(() => { cover.style.display = 'none'; }, 1000);
 
@@ -144,11 +145,11 @@ $$('.nav-menu a').forEach(a => {
     /* Safari fights smooth-scroll while snap is mandatory */
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     if (isSafari) {
-      document.documentElement.style.scrollSnapType = 'none';
-      window.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
-      setTimeout(() => { document.documentElement.style.scrollSnapType = 'y mandatory'; }, 1000);
+      MAIN.style.scrollSnapType = 'none';
+      MAIN.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
+      setTimeout(() => { MAIN.style.scrollSnapType = 'y mandatory'; }, 1000);
     } else {
-      window.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
+      MAIN.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
     }
   });
 });
@@ -157,7 +158,7 @@ $$('.nav-menu a').forEach(a => {
 
 const io = new IntersectionObserver(entries => {
   entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
-}, { threshold: 0.18 });
+}, { root: MAIN, threshold: 0.18 });
 /* Armed when the invitation opens, not at load: the hero sits behind the
    cover and would be marked "in" while invisible — then whether its fade
    showed depended on a load-timing race that differed between phone and

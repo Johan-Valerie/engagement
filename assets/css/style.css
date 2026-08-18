@@ -35,14 +35,25 @@
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
 
+/* The root NEVER scrolls. #main is the scroll container instead, so the
+   phone's URL bar can never hide — which means there is no dynamic viewport
+   at all, and svh/lvh/dvh can never disagree. This is what finally killed
+   the "next page peeking under the URL bar" gap. */
 html{
-  scroll-snap-type:y mandatory;
-  overflow:hidden;                 /* released after OPEN INVITATION */
-  scroll-behavior:smooth;
+  overflow:hidden;
   background:var(--bg);
   -webkit-text-size-adjust:100%;
 }
-html.unlocked{overflow:visible}
+
+#main{
+  position:fixed;inset:0;          /* exactly the visible area, no unit guessing */
+  overflow:hidden;                 /* released after OPEN INVITATION */
+  scroll-snap-type:y mandatory;
+  scroll-behavior:smooth;
+  overscroll-behavior-y:contain;   /* no rubber-banding out of the deck */
+  -webkit-overflow-scrolling:touch;
+}
+html.unlocked #main{overflow-y:scroll}
 
 body{
   margin:0;
@@ -336,11 +347,10 @@ a{color:inherit;text-decoration:none}
 
 .snap-section{
   position:relative;
-  /* Large-viewport height: pages extend behind the phone's translucent URL
-     bar, so what shows through it is this page's own background — not a
-     sliver of the next page (which is what dvh gave). On desktop = 100vh. */
-  min-height:100vh;    /* fallback: mobile browsers treat vh as lvh anyway */
-  min-height:100lvh;
+  /* 100% of #main, which is pinned to the viewport — so a section is always
+     exactly as tall as what you can see, never shorter. min- (not height:)
+     so a long page like RSVP can still grow and scroll inside itself. */
+  min-height:100%;
   scroll-snap-align:start;
   scroll-snap-stop:always;
   overflow-y:auto;
