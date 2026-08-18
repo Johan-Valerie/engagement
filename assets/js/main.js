@@ -29,7 +29,7 @@ const hidePreloader = () => {
 
 const forceHide = setTimeout(hidePreloader, 10000);          // safety net
 window.addEventListener('load', () => {
-  setTimeout(() => { clearTimeout(forceHide); hidePreloader(); }, 6400);   // last name lands ~5.4s, then a 1s hold
+  setTimeout(() => { clearTimeout(forceHide); hidePreloader(); }, 6600);   // last name lands ~5.6s, then a 1s hold
 });
 
 /* refreshing always returns to the cover */
@@ -38,10 +38,52 @@ window.addEventListener('beforeunload', () => window.scrollTo(0, 0));
 
 /* ═══════════ 2 · COVER ═══════════ */
 
-if (GUEST) {
-  $('#guest-name').textContent  = GUEST;   // cover
-  $('#intro-guest').textContent = GUEST;   // intro greeting
+if (GUEST) $('#guest-name').textContent = GUEST;   // cover
+
+/* ── intro greeting ──────────────────────────────────────────────
+   The Sheet builds a couple's key as "Name & Companion", so split on
+   " & " and give each name its own line with the ampersand between.
+   Names carrying titles and suffixes get long, so each line is shrunk
+   to fit the block, and only wraps if it still will not fit.        */
+function autoFit (node, container, maxPx = 14, minPx = 8.5) {
+  node.style.whiteSpace = 'nowrap';
+  let size = maxPx;
+  node.style.fontSize = size + 'px';
+  node.style.letterSpacing = '3px';
+  const avail = container.clientWidth;
+  while (size > minPx && node.scrollWidth > avail) {
+    size -= 0.5;
+    node.style.fontSize = size + 'px';
+    node.style.letterSpacing = (3 * size / maxPx).toFixed(2) + 'px';
+  }
+  if (node.scrollWidth > avail) node.style.whiteSpace = 'normal';   // last resort
 }
+
+function renderIntroGuest () {
+  const el = $('#intro-guest');
+  if (!el) return;
+  const parts = (GUEST || 'Guest').split(/\s+&\s+/).filter(Boolean);
+
+  el.textContent = '';
+  parts.forEach((part, i) => {
+    if (i) {
+      const amp = document.createElement('span');
+      amp.className = 'gamp';
+      amp.textContent = '&';
+      el.append(amp);
+    }
+    const n = document.createElement('span');
+    n.className = 'gname';
+    n.textContent = part;            // textContent, so no escaping needed
+    el.append(n);
+  });
+
+  const fit = () => $$('.gname', el).forEach(n => autoFit(n, el));
+  fit();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  addEventListener('resize', fit);
+}
+renderIntroGuest();
 
 $('#open-invitation').addEventListener('click', () => {
   window.scrollTo(0, 0);
