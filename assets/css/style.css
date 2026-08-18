@@ -31,32 +31,23 @@
   --ui:"Poppins",system-ui,sans-serif;
   --serif-light:"Cormorant",Georgia,serif;
 
+  --vh:100vh;   /* dynamic viewport height — upgraded to 100dvh below */
 }
+@supports (height:100dvh){ :root{ --vh:100dvh; } }
 
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
 
-/* The reference's root rule, verbatim this time — its full custom block is
-     html,body{ margin:0; padding:0; display:flex; flex-direction:row-reverse;
-                overflow-y:scroll; scroll-snap-type:y mandatory; background:#000 }
-   The flex pair is what the first port dropped: it forces the root to
-   re-lay-out when Safari's bottom bar collapses, so snap positions get
-   re-resolved and the page cannot come to rest a few px past a section top
-   (which is what showed a sliver of the next page). The reference also has no
-   global scroll-behavior:smooth (its nav passes behavior:'smooth' per call),
-   and it never draws behind the phone's bars — no viewport-fit=cover, no
-   env(safe-area-*). Locking before OPEN INVITATION is inline overflow styles
-   set from JS, exactly as the reference does it — no class. */
-html,body{
-  margin:0;padding:0;
-  display:flex;
-  flex-direction:row-reverse;
-  overflow-y:scroll;
-  scroll-snap-type:y mandatory;
-}
-html.no-snap{scroll-snap-type:none}
-
+/* Full-screen recipe copied from the wedding site
+   (johangw/johan-valerie-invitation), which is proven on the couple's own
+   phones. Every section is exactly one DYNAMIC viewport tall —
+   height:var(--vh), i.e. 100dvh — so whatever state Safari's bars are in,
+   a section's bottom edge sits exactly on the visible bottom edge and the
+   next page has no room to show through. Scroll-snap is never set here:
+   JS puts scroll-snap-type on <html> 600ms after OPEN INVITATION and
+   pauses it during nav jumps, exactly like the wedding build. */
 html{
+  scroll-behavior:smooth;
   /* background on html alone: an opaque body box would paint OVER the fixed
      z-index:-1 video. The html background still colours the canvas. */
   background:var(--bg);
@@ -64,18 +55,14 @@ html{
 }
 
 body{
-  /* explicit width: as a flex item of the row-reverse html, body would
-     otherwise size itself from its widest content (the gallery marquee's
-     ~2500px track) and hang off the left edge of the screen */
-  width:100%;
+  margin:0;padding:0;
   color:var(--ink);
   font-family:var(--ui);
   font-weight:300;
+  overflow-x:hidden;
+  scrollbar-width:none;
 }
-
-/* the one in-flow child of the flex body — the reference's wrapper div.
-   Everything else at body level is position:fixed, out of flow. */
-#main{width:100%}
+body::-webkit-scrollbar{display:none}
 
 img{max-width:100%;display:block}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
@@ -243,8 +230,9 @@ a{color:inherit;text-decoration:none}
 /* ═══════════════ COVER ═══════════════ */
 
 #cover-section{
+  /* the wedding's cover: fixed inset only, no explicit height — the box
+     always matches the real viewport, so nothing can be cut off */
   position:fixed;inset:0;z-index:10;
-  height:100vh;height:100svh;   /* the reference's cover rule, verbatim */
   width:100%;
   overflow:hidden;
   transition:opacity 1s,transform 1s;
@@ -255,7 +243,9 @@ a{color:inherit;text-decoration:none}
   position:relative;z-index:2;
   height:100%;display:flex;flex-direction:column;
   justify-content:space-between;align-items:center;
-  padding:46px 24px 34px;
+  /* with viewport-fit=cover the page runs under the home indicator, so the
+     bottom padding adds the safe-area inset — the wedding cover's pattern */
+  padding:46px 24px calc(34px + env(safe-area-inset-bottom));
   text-align:center;
 }
 .cover-top,.cover-bottom{width:100%;max-width:520px}
@@ -357,19 +347,26 @@ a{color:inherit;text-decoration:none}
 
 .snap-section{
   position:relative;
-  /* the reference's rule, verbatim */
-  min-height:100vh;
+  /* the wedding's section rule: exactly one dynamic viewport tall, clipped */
+  height:var(--vh);
   scroll-snap-align:start;
   scroll-snap-stop:always;
-  overflow-y:scroll;
-  overflow-x:hidden;
-  scrollbar-width:none;
+  overflow:hidden;
+  will-change:transform;
   display:flex;flex-direction:column;
   padding:74px 24px;
 }
-.snap-section::-webkit-scrollbar{display:none}
 .snap-section > *:not(.bg-img):not(.bg-video):not(.bg-scrim):not(.abs){position:relative;z-index:2}
 .snap-section > .abs{position:absolute;z-index:2}
+
+/* The wedding's guard for pages taller than one small screen (its
+   #info/#details .content pattern): the inner column scrolls inside the
+   fixed-height section. Invisible whenever everything fits. */
+.events-inner,.dc-inner,.rsvp-inner,.wishes-inner{
+  max-height:100%;overflow-y:auto;scrollbar-width:none;
+}
+.events-inner::-webkit-scrollbar,.dc-inner::-webkit-scrollbar,
+.rsvp-inner::-webkit-scrollbar,.wishes-inner::-webkit-scrollbar{display:none}
 
 /* ─── reveal system, ported from the reference ───────────────────
    Elements carry .reanimate plus a direction (.fade / .up / .left /

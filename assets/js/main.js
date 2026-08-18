@@ -14,19 +14,27 @@ const MAX_PAX   = Math.max(1, parseInt(params.get('max'), 10) || 2);
 
 /* ═══════════ 1 · INTRO / PRELOADER ═══════════ */
 
-/* the reference locks BOTH roots with inline styles, not a class */
-document.documentElement.style.overflow = 'hidden';
-document.body.style.overflow = 'hidden';
+/* The wedding site's scroll lock: pin the scroll position with an onscroll
+   handler and hide body overflow, released only by OPEN INVITATION. */
+function disableScrolling () {
+  const x = window.scrollX, y = window.scrollY;
+  window.onscroll = () => window.scrollTo(x, y);
+  document.body.style.overflow = 'hidden';
+  document.body.style.height = '100vh';
+}
+function enableScrolling () {
+  window.onscroll = null;
+  document.body.style.overflow = '';
+  document.body.style.height = '';
+}
+disableScrolling();
 
 const hidePreloader = () => {
   const p = $('#preloader');
   if (!p) return;
   p.style.transition = 'opacity .5s ease';
   p.style.opacity = '0';
-  setTimeout(() => {
-    p.remove();
-    document.body.style.overflow = 'visible';
-  }, 500);
+  setTimeout(() => { p.remove(); }, 500);   /* scroll stays locked until OPEN INVITATION */
 };
 
 const forceHide = setTimeout(hidePreloader, 10000);          // safety net
@@ -91,20 +99,24 @@ function renderIntroGuest () {
 renderIntroGuest();
 
 $('#open-invitation').addEventListener('click', () => {
-  window.scrollTo(0, 0);
+  /* the wedding's open sequence: snap off, unlock, glide to the hero,
+     snap on 600ms later */
+  document.documentElement.style.scrollSnapType = 'none';
   const cover = $('#cover-section');
   cover.classList.add('hidden');
-  /* the reference's unlock, verbatim: overflow visible on BOTH roots */
-  document.documentElement.style.overflow = 'visible';
-  document.body.style.overflow = 'visible';
-
   setTimeout(() => { cover.style.display = 'none'; }, 1000);
 
+  enableScrolling();
   startMusic();
   armReveals();
   $('#music-toggle').classList.add('show');
   $('#nav-toggle').classList.add('show');
   trackOpen();
+
+  $('#opening').scrollIntoView({ behavior: 'smooth' });
+  setTimeout(() => {
+    document.documentElement.style.scrollSnapType = 'y mandatory';
+  }, 600);
 });
 
 /* background video: iOS/Android refuse autoplay until a gesture */
@@ -144,20 +156,12 @@ $$('.nav-menu a').forEach(a => {
     navMenu.classList.remove('open');
     if (!target) return;
 
-    /* Safari fights smooth-scroll while snap is mandatory */
-    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    if (isSafari) {
-      /* the reference suspends snap on BOTH roots while animating */
-      document.documentElement.style.scrollSnapType = 'none';
-      document.body.style.scrollSnapType = 'none';
-      window.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
-      setTimeout(() => {
-        document.documentElement.style.scrollSnapType = 'y mandatory';
-        document.body.style.scrollSnapType = 'y mandatory';
-      }, 1000);
-    } else {
-      window.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
-    }
+    /* the wedding's jump: pause snap, glide, re-arm after the ride */
+    document.documentElement.style.scrollSnapType = 'none';
+    target.scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => {
+      document.documentElement.style.scrollSnapType = 'y mandatory';
+    }, 1600);
   });
 });
 
