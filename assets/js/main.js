@@ -29,7 +29,7 @@ const hidePreloader = () => {
 
 const forceHide = setTimeout(hidePreloader, 10000);          // safety net
 window.addEventListener('load', () => {
-  setTimeout(() => { clearTimeout(forceHide); hidePreloader(); }, 4200);
+  setTimeout(() => { clearTimeout(forceHide); hidePreloader(); }, 4600);
 });
 
 /* refreshing always returns to the cover */

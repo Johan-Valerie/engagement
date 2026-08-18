@@ -127,36 +127,32 @@ a{color:inherit;text-decoration:none}
   position:relative;width:100%;height:100%;
   display:flex;align-items:center;justify-content:center;
 }
+/* Three beats, opacity only — nothing moves.
+   0.4-1.9s  "THE ENGAGEMENT OF" in, hold, out
+   1.9-3.1s  monogram fades in, above the names
+   3.0-4.2s  "VALERIE & JOHAN" fades in beneath it              */
 .first-text,.second-text{
   color:#fff;font-family:var(--display);
   font-size:14px;font-weight:600;letter-spacing:3px;
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   opacity:0;white-space:nowrap;
 }
-.first-text{animation:1.5s fadeInOut .5s ease-in-out forwards}
-.second-text{
-  animation:2s fadeIn 2s ease-in-out forwards,
-            1.5s slideDown 3.5s ease-out forwards;
+.first-text{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  animation:1.5s fadeInOut .4s ease-in-out forwards;
 }
-.initial-wrapper{
-  position:absolute;top:50%;left:50%;
-  transform:translate(-50%,calc(-50% - 52px));
+.intro-stack{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:24px;
 }
-.word-mask{overflow:hidden;height:112px}
-.word{
-  position:relative;top:6rem;
-  animation:1.5s move-up 3.5s ease-out forwards,3.4s pulse 3.5s ease-in-out infinite;
+.crest{
+  width:136px;height:auto;
+  opacity:0;
+  animation:1.2s fadeIn 1.9s ease-in-out forwards;
 }
-.crest{width:104px;height:auto;opacity:.95}
+.second-text{animation:1.2s fadeIn 3s ease-in-out forwards}
 
 @keyframes fadeInOut{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0}}
-@keyframes fadeIn{0%{opacity:0}100%{opacity:1}}
-@keyframes move-up{0%{top:6rem;opacity:0}100%{top:0;opacity:1}}
-@keyframes slideDown{
-  0%{transform:translate(-50%,-50%)}
-  100%{transform:translate(-50%,calc(-50% + 26px))}
-}
-@keyframes pulse{0%{transform:scale(.93)}50%{transform:scale(1)}100%{transform:scale(.93)}}
+@keyframes fadeIn{0%{opacity:0}100%{opacity:.95}}
 
 /* ═══════════════ COVER ═══════════════ */
 
@@ -509,6 +505,5 @@ a{color:inherit;text-decoration:none}
   html{scroll-behavior:auto}
   .reveal{opacity:1;transform:none;transition:none}
   .marquee[data-dir] .marquee-track{animation:none}
-  .word{animation:1.5s move-up 3.5s ease-out forwards}
-  .crest{transform:none}
+  /* the intro is opacity-only, so it already respects reduced motion */
 }
