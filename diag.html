@@ -7,43 +7,54 @@
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   html{scroll-snap-type:y mandatory}
-  body{font-family:system-ui,sans-serif;background:#111;color:#fff}
+  body{font-family:-apple-system,system-ui,sans-serif;background:#111;color:#fff}
 
-  /* PAGE 1 — sized exactly like the invitation's pages */
+  /* PAGE 1 — the invitation's exact page rule */
   .p1{
-    min-height:calc(100vh + env(safe-area-inset-bottom));   /* THE FIX */
+    min-height:calc(100vh + env(safe-area-inset-bottom));
     scroll-snap-align:start;
-    background:#0a5c2a;                 /* GREEN = page 1 */
-    position:relative;
-    display:flex;flex-direction:column;justify-content:space-between;
-    padding:10px;
+    background:#0a5c2a;                       /* GREEN = page 1 */
+    padding:10px 10px 0;
   }
   .p2{
     min-height:100vh;
     scroll-snap-align:start;
-    background:#c1121f;                 /* RED = page 2, must NOT be visible */
+    background:#c1121f;                       /* RED = page 2 */
     display:flex;align-items:center;justify-content:center;
-    font-size:34px;font-weight:700;
+    font-size:40px;font-weight:800;
   }
-  table{border-collapse:collapse;font-size:13px;width:100%;background:rgba(0,0,0,.45)}
-  td{padding:3px 6px;border-bottom:1px solid rgba(255,255,255,.15)}
+
+  /* verdict banner — pinned, so it is in the shot wherever you are */
+  .verdict{
+    position:fixed;left:0;right:0;top:0;z-index:9;
+    padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;
+    font-size:19px;font-weight:800;text-align:center;line-height:1.3;
+  }
+  .ok{background:#0a5c2a;color:#fff}
+  .bad{background:#c1121f;color:#fff}
+
+  .note{margin-top:calc(env(safe-area-inset-top) + 74px);
+        font-size:15px;font-weight:700;text-align:center;
+        background:#000;padding:8px;border-radius:6px}
+  table{border-collapse:collapse;font-size:13px;width:100%;
+        background:rgba(0,0,0,.5);margin-top:10px;border-radius:6px;overflow:hidden}
+  td{padding:4px 7px;border-bottom:1px solid rgba(255,255,255,.14)}
   td:first-child{color:#9fe3b5}
-  td:last-child{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
-  .foot{text-align:center;font-size:15px;font-weight:700;background:#000;padding:6px}
-  .ua{font-size:10px;color:#bbb;word-break:break-all;padding:4px 6px}
+  td:last-child{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+  .ua{font-size:10px;color:#bbb;word-break:break-all;padding:6px 2px}
 </style>
 </head>
 <body>
 
+<div class="verdict" id="verdict">measuring…</div>
+
 <section class="p1">
-  <div>
-    <table id="t"></table>
-    <div class="ua" id="ua"></div>
-  </div>
-  <div class="foot">GREEN should reach the very bottom &mdash; no red at all</div>
+  <div class="note">DO NOT SCROLL — just screenshot this screen</div>
+  <table id="t"></table>
+  <div class="ua" id="ua"></div>
 </section>
 
-<section class="p2">PAGE 2 — RED</section>
+<section class="p2">PAGE&nbsp;2</section>
 
 <script>
   const px = v => {
@@ -54,28 +65,46 @@
     d.remove();
     return Math.round(h);
   };
+
   function render () {
-    const vv = window.visualViewport;
+    const vv  = window.visualViewport;
+    const p1  = document.querySelector('.p1').getBoundingClientRect();
+    const p2  = document.querySelector('.p2').getBoundingClientRect();
+    /* how much of the red block is on screen right now */
+    const redOnScreen = Math.max(0, Math.round(Math.min(innerHeight, p2.bottom) - Math.max(0, p2.top)));
+    const v = document.getElementById('verdict');
+    if (window.scrollY > 2) {
+      v.className = 'verdict bad';
+      v.textContent = 'You scrolled (' + Math.round(window.scrollY) + 'px) — scroll back to the top first';
+    } else if (redOnScreen > 0) {
+      v.className = 'verdict bad';
+      v.textContent = 'RED IS SHOWING: ' + redOnScreen + 'px';
+    } else {
+      v.className = 'verdict ok';
+      v.textContent = 'NO RED — page 1 fills the screen';
+    }
+
     const rows = [
+      ['red showing (px)',        redOnScreen],
+      ['scrollY',                 Math.round(window.scrollY)],
+      ['page-1 box height',       Math.round(p1.height)],
       ['window.innerHeight',      window.innerHeight],
-      ['documentElement.clientH', document.documentElement.clientHeight],
       ['visualViewport.height',   vv ? Math.round(vv.height) : 'n/a'],
-      ['visualViewport.offsetTop',vv ? Math.round(vv.offsetTop) : 'n/a'],
+      ['documentElement.clientH', document.documentElement.clientHeight],
       ['screen.height',           screen.height],
-      ['100vh  =',                px('100vh')],
-      ['100svh =',                px('100svh')],
-      ['100lvh =',                px('100lvh')],
-      ['100dvh =',                px('100dvh')],
+      ['100vh',                   px('100vh')],
+      ['100svh',                  px('100svh')],
+      ['100lvh',                  px('100lvh')],
+      ['100dvh',                  px('100dvh')],
+      ['safe-area-inset-top',     px('env(safe-area-inset-top)')],
       ['safe-area-inset-bottom',  px('env(safe-area-inset-bottom)')],
-      ['100vh + inset =',         px('calc(100vh + env(safe-area-inset-bottom))')],
-      ['devicePixelRatio',        window.devicePixelRatio],
-      ['page-1 box height',       Math.round(document.querySelector('.p1').getBoundingClientRect().height)],
-      ['RED visible at?',         Math.round(document.querySelector('.p2').getBoundingClientRect().top)],
+      ['100vh + inset',           px('calc(100vh + env(safe-area-inset-bottom))')],
     ];
     document.getElementById('t').innerHTML =
       rows.map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('');
     document.getElementById('ua').textContent = navigator.userAgent;
   }
+
   render();
   addEventListener('resize', render);
   addEventListener('scroll', render, {passive:true});
