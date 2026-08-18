@@ -75,5 +75,12 @@ and the Google Maps links, currently a generic search URL rather than a pinned
   the version here has been keyed to real transparency.
 - Fonts are Google-hosted stand-ins for the reference's commercial faces:
   Playfair Display (display), Pinyon Script (script), Poppins (UI), Cormorant.
+- **Milton One Bold** is self-hosted in `assets/fonts/` — it is not a Google
+  Font. Used only for "Valerie", "Johan" and the ampersand on the landing page.
+  The vendor ships it as its own family at weight class 400, so `@font-face`
+  remaps it to CSS `700`; ask for `font-weight:700` to get the real outlines.
+  Licence: free for **personal use** (Youssef Habchi). A private wedding
+  invitation is personal use; if this is ever put to commercial use, buy a
+  licence from the designer first.
 
 Full design spec: `../ENGAGEMENT-SPEC.md`
