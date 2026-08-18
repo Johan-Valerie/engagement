@@ -226,9 +226,7 @@ a{color:inherit;text-decoration:none}
 
 #cover-section{
   position:fixed;inset:0;z-index:10;
-  /* pinned single screen — same safe-area treatment so it cannot end above
-     the translucent nav bar and reveal the hero behind it */
-  height:calc(100vh + env(safe-area-inset-bottom));
+  height:100vh;
   width:100%;
   overflow:hidden;
   transition:opacity 1s,transform 1s;
@@ -344,14 +342,11 @@ a{color:inherit;text-decoration:none}
   /* Verbatim from the reference's own stylesheet:
        .snap-section{ min-height:100vh; overflow-y:scroll;
                       scroll-snap-align:start; scroll-snap-stop:always }
-     Plain vh — not svh/dvh/lvh — but with the safe-area inset ADDED.
-     viewport-fit=cover tells the phone to paint the page edge-to-edge behind
-     its translucent system navigation bar, yet 100vh stops at that bar's top
-     edge. The page therefore ended exactly there and the next one filled the
-     strip behind the glass. env(safe-area-inset-bottom) is precisely that
-     strip's height, and is 0 on devices without one, so this costs nothing
-     elsewhere. */
-  min-height:calc(100vh + env(safe-area-inset-bottom));
+     Plain vh, exactly as the reference has it. viewport-fit=cover has been
+     dropped from the viewport meta, so the browser reserves the bar's space
+     and paints it solid rather than letting the page show through — nothing
+     can appear behind it to peek. */
+  min-height:100vh;
   scroll-snap-align:start;
   scroll-snap-stop:always;
   overflow-y:auto;
