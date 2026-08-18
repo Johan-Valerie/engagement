@@ -585,7 +585,10 @@ a{color:inherit;text-decoration:none}
 /* ─── Page 10 · closing ─── */
 .closing{justify-content:center;align-items:center;text-align:center}
 .closing-inner{max-width:520px}
-.closing-mark{width:74px;margin:22px auto 10px;opacity:.9}
+/* the 90% softening goes through filter, not opacity: an opacity here
+   would sit later in the sheet than .fade{opacity:0} and pin the mark
+   visible, so it could never fade in with the rest of the page */
+.closing-mark{width:74px;margin:22px auto 10px;filter:opacity(.9)}
 .closing-names{
   font-family:var(--display);font-weight:600;
   font-size:17px;letter-spacing:2.6px;margin:0;
@@ -624,7 +627,11 @@ a{color:inherit;text-decoration:none}
 }
 
 @media (prefers-reduced-motion:reduce){
-  .fade,.up,.left,.right{opacity:1;transform:none;transition:none}
+  /* Keep the cross-fades — opacity alone is not a vestibular trigger — and
+     drop only the travel, which is. The old rule killed opacity too, so a
+     phone with iOS Reduce Motion switched on saw no reveals whatsoever. */
+  .up,.left,.right,
+  .up.reanimate.in-view,.left.reanimate.in-view,.right.reanimate.in-view{transform:none}
   .marquee[data-dir] .marquee-track{animation:none}
   /* the intro is opacity-only, so it already respects reduced motion */
 }

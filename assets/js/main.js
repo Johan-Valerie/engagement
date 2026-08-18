@@ -178,24 +178,44 @@ $$('.nav-menu a').forEach(a => {
 
 /* ═══════════ 5 · SCROLL REVEALS ═══════════ */
 
-/* The reference's observer, same settings: it ADDS in-view on entry and
-   REMOVES it on exit, so each page replays its stagger every time you come
-   back to it, instead of firing once and staying put. */
-const io = new IntersectionObserver(entries => {
-  entries.forEach(en => en.target.classList.toggle('in-view', en.isIntersecting));
-}, { root: null, rootMargin: '-10px 0px -10px 0px', threshold: 0.01 });
+/* Elements carry .reanimate + a direction (.fade/.up/.left/.right) + a
+   .delayNms stagger. Adding .in-view plays the reveal and removing it
+   rewinds, so a page replays its stagger every time you come back to it.
 
-/* Armed on open, not at load: the hero sits behind the cover and would be
-   marked in-view while invisible, so its first fade would be missed.
-   The observer's first callback can lag by seconds on the busy frame right
-   after opening (video decode + fonts), which left the hero blank, so
-   anything already on screen is marked in-view directly. */
-function armReveals () {
-  $$('.reanimate').forEach(el => {
-    io.observe(el);
+   Visibility is measured straight from #main's box on each scroll frame,
+   NOT left to an IntersectionObserver. Since the pages moved inside the
+   fixed #main scroller, an observer rooted at the viewport misreports
+   elements in a fixed subtree on iOS Safari: it called all 37 visible the
+   moment the invitation opened, so every fade ran off-screen and each page
+   was already solid by the time you scrolled to it — no animation at all.
+   Element rects always reflect what is really painted, so this cannot
+   disagree with what the eye sees. 37 elements, throttled to one pass per
+   frame: cheaper than it looks. */
+const reveals = [];
+
+function syncReveals () {
+  const box = MAIN.getBoundingClientRect();
+  const top = box.top + 10, bottom = box.bottom - 10;   /* the old -10px margin */
+  reveals.forEach(el => {
     const r = el.getBoundingClientRect();
-    if (r.top < innerHeight && r.bottom > 0) el.classList.add('in-view');
+    el.classList.toggle('in-view', r.top < bottom && r.bottom > top);
   });
+}
+
+let revealTick = false;
+function queueReveals () {
+  if (revealTick) return;
+  revealTick = true;
+  requestAnimationFrame(() => { revealTick = false; syncReveals(); });
+}
+
+/* Armed on open, not at load: the hero sits behind the cover, and marking
+   it visible early would burn its fade where nobody can see it. */
+function armReveals () {
+  reveals.push(...$$('.reanimate'));
+  syncReveals();
+  MAIN.addEventListener('scroll', queueReveals, { passive: true });
+  addEventListener('resize', queueReveals);
 }
 
 /* ═══════════ 6 · GALLERY ═══════════ */
