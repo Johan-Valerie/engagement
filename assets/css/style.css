@@ -127,32 +127,44 @@ a{color:inherit;text-decoration:none}
   position:relative;width:100%;height:100%;
   display:flex;align-items:center;justify-content:center;
 }
-/* Three beats, opacity only — nothing moves.
-   0.4-1.9s  "THE ENGAGEMENT OF" in, hold, out
-   1.9-3.1s  monogram fades in
-   3.0-4.2s  VALERIE and JOHAN fade in either side of it
-   then a 1.5s hold before the intro clears                     */
+/* Four beats, opacity only — nothing moves.
+   0.3-1.9s  "Dear, <guest>, / You are invited to"  in, hold, out
+   1.9-3.3s  "THE ENGAGEMENT OF"                    in, hold, out
+   3.3-4.4s  monogram fades in
+   4.3-5.4s  VALERIE and JOHAN fade in above and below it
+   then a 1s hold before the intro clears                       */
 .first-text,.intro-name{
   color:#fff;font-family:var(--display);
   font-size:14px;font-weight:600;letter-spacing:3px;
   opacity:0;white-space:nowrap;
 }
+.intro-greeting{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:max-content;max-width:84vw;text-align:center;
+  opacity:0;
+  animation:1.6s fadeInOut .3s ease-in-out forwards;
+}
+.intro-greeting .lead{
+  display:block;color:rgba(255,255,255,.9);
+  font-family:var(--display);font-size:12.5px;font-weight:400;
+  letter-spacing:.6px;line-height:2;
+}
 .first-text{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  animation:1.5s fadeInOut .4s ease-in-out forwards;
+  animation:1.4s fadeInOut 1.9s ease-in-out forwards;
 }
 /* VALERIE / crest / JOHAN stacked, everything on the same centre line.
    align-items:center centres each row independently of its own width. */
 .intro-stack{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  display:flex;flex-direction:column;align-items:center;gap:30px;
+  display:flex;flex-direction:column;align-items:center;gap:38px;
   text-align:center;
 }
-.intro-name{animation:1.2s fadeIn 3s ease-in-out forwards}
+.intro-name{animation:1.1s fadeIn 4.3s ease-in-out forwards}
 .crest{
   flex:0 0 auto;width:68px;height:auto;
   opacity:0;
-  animation:1.2s fadeIn 1.9s ease-in-out forwards;
+  animation:1.1s fadeIn 3.3s ease-in-out forwards;
 }
 
 @keyframes fadeInOut{0%{opacity:0}20%{opacity:1}80%{opacity:1}100%{opacity:0}}

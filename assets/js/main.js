@@ -29,7 +29,7 @@ const hidePreloader = () => {
 
 const forceHide = setTimeout(hidePreloader, 10000);          // safety net
 window.addEventListener('load', () => {
-  setTimeout(() => { clearTimeout(forceHide); hidePreloader(); }, 5700);   // last name lands ~4.2s, then a 1.5s hold
+  setTimeout(() => { clearTimeout(forceHide); hidePreloader(); }, 6400);   // last name lands ~5.4s, then a 1s hold
 });
 
 /* refreshing always returns to the cover */
@@ -38,7 +38,10 @@ window.addEventListener('beforeunload', () => window.scrollTo(0, 0));
 
 /* ═══════════ 2 · COVER ═══════════ */
 
-if (GUEST) $('#guest-name').textContent = GUEST;
+if (GUEST) {
+  $('#guest-name').textContent  = GUEST;   // cover
+  $('#intro-guest').textContent = GUEST;   // intro greeting
+}
 
 $('#open-invitation').addEventListener('click', () => {
   window.scrollTo(0, 0);
