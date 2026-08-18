@@ -12,28 +12,6 @@ const params    = new URLSearchParams(location.search);
 const GUEST     = (params.get('to') || '').trim();
 const MAX_PAX   = Math.max(1, parseInt(params.get('max'), 10) || 2);
 
-/* ═══════════ 0 · PAGE HEIGHT ═══════════
-   Safari reports a smaller viewport while its bars are expanded and a larger
-   one once they retract, and 100vh does not always match the larger state —
-   so a page could end above the bottom of the screen and reveal the next one.
-   Track the tallest viewport actually seen and publish it as --vh; sections
-   use it as their floor, so they are never shorter than what is on screen.  */
-let maxVH = 0;
-function setVH () {
-  const h = window.innerHeight;
-  if (h > maxVH) {
-    maxVH = h;
-    document.documentElement.style.setProperty('--vh', maxVH + 'px');
-  }
-}
-setVH();
-addEventListener('resize', setVH);
-addEventListener('orientationchange', () => {
-  maxVH = 0;                                  // start over: the screen turned
-  setTimeout(setVH, 300);
-});
-if (window.visualViewport) visualViewport.addEventListener('resize', setVH);
-
 /* ═══════════ 1 · INTRO / PRELOADER ═══════════ */
 
 document.body.style.overflow = 'hidden';

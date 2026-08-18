@@ -230,11 +230,7 @@ a{color:inherit;text-decoration:none}
 
 #cover-section{
   position:fixed;inset:0;z-index:10;
-  /* No explicit height. inset:0 already pins all four edges to the real
-     viewport, and an explicit height overrides that bottom edge — if it
-     resolved taller than the area Safari gives the page, the cover overflowed,
-     overflow:hidden clipped the OPEN INVITATION button, and the excess showed
-     as a black bar. */
+  height:100vh;height:100svh;   /* the reference's cover rule, verbatim */
   width:100%;
   overflow:hidden;
   transition:opacity 1s,transform 1s;
@@ -245,9 +241,7 @@ a{color:inherit;text-decoration:none}
   position:relative;z-index:2;
   height:100%;display:flex;flex-direction:column;
   justify-content:space-between;align-items:center;
-  /* 68px foot, not 34: the old rule added env(safe-area-inset-bottom) on top
-     of 34px, so dropping the inset dropped the whole group by that much. */
-  padding:46px 24px 68px;
+  padding:46px 24px 34px;
   text-align:center;
 }
 .cover-top,.cover-bottom{width:100%;max-width:520px}
@@ -349,12 +343,8 @@ a{color:inherit;text-decoration:none}
 
 .snap-section{
   position:relative;
-  /* The reference's rule, plus a measured floor. --vh is set from JS to the
-     LARGEST viewport height actually observed on the device, so a page can
-     never end up shorter than what is on screen — which is what let the next
-     page show at the bottom. Falls back to 100vh if JS never runs. */
-  min-height:100vh;                                  /* fallback */
-  min-height:max(100vh,100lvh,var(--vh,0px));        /* whichever is tallest */
+  /* the reference's rule, verbatim */
+  min-height:100vh;
   scroll-snap-align:start;
   scroll-snap-stop:always;
   overflow-y:scroll;
