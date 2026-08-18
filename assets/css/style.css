@@ -230,7 +230,11 @@ a{color:inherit;text-decoration:none}
 
 #cover-section{
   position:fixed;inset:0;z-index:10;
-  height:100vh;height:100svh;   /* the reference's cover rule, verbatim */
+  /* No explicit height. inset:0 already pins all four edges to the real
+     viewport, and an explicit height overrides that bottom edge — if it
+     resolved taller than the area Safari gives the page, the cover overflowed,
+     overflow:hidden clipped the OPEN INVITATION button, and the excess showed
+     as a black bar. */
   width:100%;
   overflow:hidden;
   transition:opacity 1s,transform 1s;
