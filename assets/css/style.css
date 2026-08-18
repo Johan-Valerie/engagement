@@ -31,38 +31,45 @@
   --ui:"Poppins",system-ui,sans-serif;
   --serif-light:"Cormorant",Georgia,serif;
 
-  --vh:100vh;   /* dynamic viewport height — upgraded to 100dvh below */
 }
-@supports (height:100dvh){ :root{ --vh:100dvh; } }
 
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
 
-/* Full-screen recipe copied from the wedding site
-   (johangw/johan-valerie-invitation), which is proven on the couple's own
-   phones. Every section is exactly one DYNAMIC viewport tall —
-   height:var(--vh), i.e. 100dvh — so whatever state Safari's bars are in,
-   a section's bottom edge sits exactly on the visible bottom edge and the
-   next page has no room to show through. Scroll-snap is never set here:
-   JS puts scroll-snap-type on <html> 600ms after OPEN INVITATION and
-   pauses it during nav jumps, exactly like the wedding build. */
+/* App-shell scrolling — the fix for page 2 glowing through Safari's
+   translucent bottom bar. iOS paints whatever the DOCUMENT has below the
+   fold behind that bar, and on a snap-page site that is always the top of
+   the next page. So the document itself never scrolls: it is exactly one
+   screen tall, and the pages scroll inside #main, a fixed inset:0
+   container. Behind the bar there is now only the site's dark canvas —
+   the bar is effectively blocked out. Scroll-snap is never set here:
+   JS arms it on #main 600ms after OPEN INVITATION and pauses it during
+   nav jumps (the wedding's timings). */
 html{
-  scroll-behavior:smooth;
-  /* background on html alone: an opaque body box would paint OVER the fixed
-     z-index:-1 video. The html background still colours the canvas. */
-  background:var(--bg);
+  height:100%;
+  overflow:hidden;
+  background:var(--bg);   /* the canvas — what Safari's bar now sits on */
   -webkit-text-size-adjust:100%;
 }
 
 body{
   margin:0;padding:0;
+  height:100%;
+  overflow:hidden;
   color:var(--ink);
   font-family:var(--ui);
   font-weight:300;
-  overflow-x:hidden;
+}
+
+/* the scroller: pinned to the visible viewport, so pages track the browser
+   bars exactly while the document behind it never moves */
+#main{
+  position:fixed;inset:0;z-index:1;
+  overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
   scrollbar-width:none;
 }
-body::-webkit-scrollbar{display:none}
+#main::-webkit-scrollbar{display:none}
 
 img{max-width:100%;display:block}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
@@ -347,8 +354,8 @@ a{color:inherit;text-decoration:none}
 
 .snap-section{
   position:relative;
-  /* the wedding's section rule: exactly one dynamic viewport tall, clipped */
-  height:var(--vh);
+  /* exactly one viewport tall — 100% of the fixed #main scroller */
+  height:100%;
   scroll-snap-align:start;
   scroll-snap-stop:always;
   overflow:hidden;

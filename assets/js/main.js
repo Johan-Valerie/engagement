@@ -14,19 +14,12 @@ const MAX_PAX   = Math.max(1, parseInt(params.get('max'), 10) || 2);
 
 /* ═══════════ 1 · INTRO / PRELOADER ═══════════ */
 
-/* The wedding site's scroll lock: pin the scroll position with an onscroll
-   handler and hide body overflow, released only by OPEN INVITATION. */
-function disableScrolling () {
-  const x = window.scrollX, y = window.scrollY;
-  window.onscroll = () => window.scrollTo(x, y);
-  document.body.style.overflow = 'hidden';
-  document.body.style.height = '100vh';
-}
-function enableScrolling () {
-  window.onscroll = null;
-  document.body.style.overflow = '';
-  document.body.style.height = '';
-}
+/* #main is the one scroller — the document itself never moves, so nothing
+   but the dark canvas can show behind Safari's bottom bar. Locked until
+   OPEN INVITATION. */
+const MAIN = $('#main');
+function disableScrolling () { MAIN.style.overflowY = 'hidden'; }
+function enableScrolling ()  { MAIN.style.overflowY = 'auto'; }
 disableScrolling();
 
 const hidePreloader = () => {
@@ -100,22 +93,22 @@ renderIntroGuest();
 
 $('#open-invitation').addEventListener('click', () => {
   /* the wedding's open sequence: snap off, unlock, glide to the hero,
-     snap on 600ms later */
-  document.documentElement.style.scrollSnapType = 'none';
+     snap on 600ms later — applied to the #main scroller */
+  MAIN.style.scrollSnapType = 'none';
   const cover = $('#cover-section');
   cover.classList.add('hidden');
   setTimeout(() => { cover.style.display = 'none'; }, 1000);
 
   enableScrolling();
+  MAIN.scrollTop = 0;
   startMusic();
   armReveals();
   $('#music-toggle').classList.add('show');
   $('#nav-toggle').classList.add('show');
   trackOpen();
 
-  $('#opening').scrollIntoView({ behavior: 'smooth' });
   setTimeout(() => {
-    document.documentElement.style.scrollSnapType = 'y mandatory';
+    MAIN.style.scrollSnapType = 'y mandatory';
   }, 600);
 });
 
@@ -148,6 +141,7 @@ navBtn.addEventListener('click', () => {
   navMenu.classList.toggle('open');
 });
 
+let navSettleWatch;
 $$('.nav-menu a').forEach(a => {
   a.addEventListener('click', e => {
     e.preventDefault();
@@ -156,12 +150,29 @@ $$('.nav-menu a').forEach(a => {
     navMenu.classList.remove('open');
     if (!target) return;
 
-    /* the wedding's jump: pause snap, glide, re-arm after the ride */
-    document.documentElement.style.scrollSnapType = 'none';
+    /* the wedding's jump — pause snap, glide, re-arm — but re-arm only on
+       ARRIVAL, not on a timer: a fixed timer can fire mid-glide on long
+       jumps and mandatory snap then drags the scroll back. If the glide
+       stalls short (browser smooth-scroll tails can), resume it. */
+    MAIN.style.scrollSnapType = 'none';
     target.scrollIntoView({ behavior: 'smooth' });
-    setTimeout(() => {
-      document.documentElement.style.scrollSnapType = 'y mandatory';
-    }, 1600);
+    clearInterval(navSettleWatch);
+    let last = -1, still = 0;
+    const t0 = Date.now();
+    navSettleWatch = setInterval(() => {
+      const goal = target.offsetTop;
+      const y = MAIN.scrollTop;
+      const stalled = y === last && ++still >= 3;
+      if (y !== last) { still = 0; last = y; }
+      if (Math.abs(y - goal) < 2 || Date.now() - t0 > 4000) {
+        clearInterval(navSettleWatch);
+        MAIN.scrollTo(0, goal);
+        MAIN.style.scrollSnapType = 'y mandatory';
+      } else if (stalled) {
+        still = 0;
+        MAIN.scrollTo({ top: goal, behavior: 'smooth' });
+      }
+    }, 100);
   });
 });
 
