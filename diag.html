@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Viewport diagnostic</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-snap-type:y mandatory}
+  body{font-family:system-ui,sans-serif;background:#111;color:#fff}
+
+  /* PAGE 1 — sized exactly like the invitation's pages */
+  .p1{
+    min-height:100vh;
+    scroll-snap-align:start;
+    background:#0a5c2a;                 /* GREEN = page 1 */
+    position:relative;
+    display:flex;flex-direction:column;justify-content:space-between;
+    padding:10px;
+  }
+  .p2{
+    min-height:100vh;
+    scroll-snap-align:start;
+    background:#c1121f;                 /* RED = page 2, must NOT be visible */
+    display:flex;align-items:center;justify-content:center;
+    font-size:34px;font-weight:700;
+  }
+  table{border-collapse:collapse;font-size:13px;width:100%;background:rgba(0,0,0,.45)}
+  td{padding:3px 6px;border-bottom:1px solid rgba(255,255,255,.15)}
+  td:first-child{color:#9fe3b5}
+  td:last-child{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+  .foot{text-align:center;font-size:15px;font-weight:700;background:#000;padding:6px}
+  .ua{font-size:10px;color:#bbb;word-break:break-all;padding:4px 6px}
+</style>
+</head>
+<body>
+
+<section class="p1">
+  <div>
+    <table id="t"></table>
+    <div class="ua" id="ua"></div>
+  </div>
+  <div class="foot">&darr; GREEN ENDS HERE = bottom of page 1 &darr;</div>
+</section>
+
+<section class="p2">PAGE 2 — RED</section>
+
+<script>
+  const px = v => {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:absolute;visibility:hidden;height:' + v;
+    document.body.append(d);
+    const h = d.getBoundingClientRect().height;
+    d.remove();
+    return Math.round(h);
+  };
+  function render () {
+    const vv = window.visualViewport;
+    const rows = [
+      ['window.innerHeight',      window.innerHeight],
+      ['documentElement.clientH', document.documentElement.clientHeight],
+      ['visualViewport.height',   vv ? Math.round(vv.height) : 'n/a'],
+      ['visualViewport.offsetTop',vv ? Math.round(vv.offsetTop) : 'n/a'],
+      ['screen.height',           screen.height],
+      ['100vh  =',                px('100vh')],
+      ['100svh =',                px('100svh')],
+      ['100lvh =',                px('100lvh')],
+      ['100dvh =',                px('100dvh')],
+      ['devicePixelRatio',        window.devicePixelRatio],
+      ['page-1 box height',       Math.round(document.querySelector('.p1').getBoundingClientRect().height)],
+      ['RED visible at?',         Math.round(document.querySelector('.p2').getBoundingClientRect().top)],
+    ];
+    document.getElementById('t').innerHTML =
+      rows.map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('');
+    document.getElementById('ua').textContent = navigator.userAgent;
+  }
+  render();
+  addEventListener('resize', render);
+  addEventListener('scroll', render, {passive:true});
+  if (window.visualViewport) {
+    visualViewport.addEventListener('resize', render);
+    visualViewport.addEventListener('scroll', render);
+  }
+</script>
+</body>
+</html>
