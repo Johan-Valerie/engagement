@@ -36,32 +36,46 @@
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
 
-/* The reference's own rule, which it puts on html AND body:
-     html,body{ margin:0; padding:0; overflow-y:scroll;
-                scroll-snap-type:y mandatory; background:#000 }
-   Crucially it never opts into drawing behind the phone's bars — no
-   viewport-fit=cover, and not one env(safe-area-*) in its stylesheet. Safari
-   therefore keeps its bars solid and hands the page only the space between
-   them, so 100vh IS the visible area and nothing can show through a bar. */
-html{
+/* The reference's root rule, verbatim this time — its full custom block is
+     html,body{ margin:0; padding:0; display:flex; flex-direction:row-reverse;
+                overflow-y:scroll; scroll-snap-type:y mandatory; background:#000 }
+   The flex pair is what the first port dropped: it forces the root to
+   re-lay-out when Safari's bottom bar collapses, so snap positions get
+   re-resolved and the page cannot come to rest a few px past a section top
+   (which is what showed a sliver of the next page). The reference also has no
+   global scroll-behavior:smooth (its nav passes behavior:'smooth' per call),
+   and it never draws behind the phone's bars — no viewport-fit=cover, no
+   env(safe-area-*). Locking before OPEN INVITATION is inline overflow styles
+   set from JS, exactly as the reference does it — no class. */
+html,body{
+  margin:0;padding:0;
+  display:flex;
+  flex-direction:row-reverse;
+  overflow-y:scroll;
   scroll-snap-type:y mandatory;
-  overflow:hidden;                 /* released after OPEN INVITATION */
-  scroll-behavior:smooth;
+}
+html.no-snap{scroll-snap-type:none}
+
+html{
+  /* background on html alone: an opaque body box would paint OVER the fixed
+     z-index:-1 video. The html background still colours the canvas. */
   background:var(--bg);
   -webkit-text-size-adjust:100%;
 }
-html.unlocked{overflow-y:scroll;overflow-x:hidden}
 
 body{
-  margin:0;padding:0;
-  scroll-snap-type:y mandatory;
-  /* no background: an opaque body box would paint OVER the fixed
-     z-index:-1 video. The html background still colours the canvas. */
+  /* explicit width: as a flex item of the row-reverse html, body would
+     otherwise size itself from its widest content (the gallery marquee's
+     ~2500px track) and hang off the left edge of the screen */
+  width:100%;
   color:var(--ink);
   font-family:var(--ui);
   font-weight:300;
-  overflow-x:hidden;
 }
+
+/* the one in-flow child of the flex body — the reference's wrapper div.
+   Everything else at body level is position:fixed, out of flow. */
+#main{width:100%}
 
 img{max-width:100%;display:block}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
@@ -606,7 +620,6 @@ a{color:inherit;text-decoration:none}
 }
 
 @media (prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}
   .fade,.up,.left,.right{opacity:1;transform:none;transition:none}
   .marquee[data-dir] .marquee-track{animation:none}
   /* the intro is opacity-only, so it already respects reduced motion */

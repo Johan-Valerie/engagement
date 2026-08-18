@@ -14,6 +14,8 @@ const MAX_PAX   = Math.max(1, parseInt(params.get('max'), 10) || 2);
 
 /* ═══════════ 1 · INTRO / PRELOADER ═══════════ */
 
+/* the reference locks BOTH roots with inline styles, not a class */
+document.documentElement.style.overflow = 'hidden';
 document.body.style.overflow = 'hidden';
 
 const hidePreloader = () => {
@@ -92,7 +94,8 @@ $('#open-invitation').addEventListener('click', () => {
   window.scrollTo(0, 0);
   const cover = $('#cover-section');
   cover.classList.add('hidden');
-  document.documentElement.classList.add('unlocked');
+  /* the reference's unlock, verbatim: overflow visible on BOTH roots */
+  document.documentElement.style.overflow = 'visible';
   document.body.style.overflow = 'visible';
 
   setTimeout(() => { cover.style.display = 'none'; }, 1000);
@@ -144,9 +147,14 @@ $$('.nav-menu a').forEach(a => {
     /* Safari fights smooth-scroll while snap is mandatory */
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     if (isSafari) {
+      /* the reference suspends snap on BOTH roots while animating */
       document.documentElement.style.scrollSnapType = 'none';
+      document.body.style.scrollSnapType = 'none';
       window.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
-      setTimeout(() => { document.documentElement.style.scrollSnapType = 'y mandatory'; }, 1000);
+      setTimeout(() => {
+        document.documentElement.style.scrollSnapType = 'y mandatory';
+        document.body.style.scrollSnapType = 'y mandatory';
+      }, 1000);
     } else {
       window.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
     }
