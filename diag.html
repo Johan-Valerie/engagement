@@ -11,7 +11,7 @@
 
   /* PAGE 1 — sized exactly like the invitation's pages */
   .p1{
-    min-height:100vh;
+    min-height:calc(100vh + env(safe-area-inset-bottom));   /* THE FIX */
     scroll-snap-align:start;
     background:#0a5c2a;                 /* GREEN = page 1 */
     position:relative;
@@ -40,7 +40,7 @@
     <table id="t"></table>
     <div class="ua" id="ua"></div>
   </div>
-  <div class="foot">&darr; GREEN ENDS HERE = bottom of page 1 &darr;</div>
+  <div class="foot">GREEN should reach the very bottom &mdash; no red at all</div>
 </section>
 
 <section class="p2">PAGE 2 — RED</section>
@@ -66,6 +66,8 @@
       ['100svh =',                px('100svh')],
       ['100lvh =',                px('100lvh')],
       ['100dvh =',                px('100dvh')],
+      ['safe-area-inset-bottom',  px('env(safe-area-inset-bottom)')],
+      ['100vh + inset =',         px('calc(100vh + env(safe-area-inset-bottom))')],
       ['devicePixelRatio',        window.devicePixelRatio],
       ['page-1 box height',       Math.round(document.querySelector('.p1').getBoundingClientRect().height)],
       ['RED visible at?',         Math.round(document.querySelector('.p2').getBoundingClientRect().top)],
