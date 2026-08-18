@@ -71,7 +71,6 @@
     <li><a href="#opening">Home</a></li>
     <li><a href="#bride">Bride &amp; Groom</a></li>
     <li><a href="#events">Event Details</a></li>
-    <li><a href="#lovestory">Love Story</a></li>
     <li><a href="#dresscode">Dress Code</a></li>
     <li><a href="#rsvp">RSVP &amp; Wishes</a></li>
     <li><a href="#gallery">Gallery</a></li>
@@ -88,11 +87,14 @@
 <main id="main">
 
   <!-- ─── PAGE 1 · HERO ─── -->
+  <!-- One continuous video behind every page; sections with their own
+       picture (bride, groom, closing) paint over it. -->
+  <video id="bg-video" class="bg-video-fixed" autoplay muted loop playsinline preload="auto" poster="assets/img/poster-portrait.jpg">
+    <source src="assets/video/cover-portrait.mp4" media="(max-aspect-ratio: 1/1)" type="video/mp4">
+    <source src="assets/video/cover-landscape.mp4" type="video/mp4">
+  </video>
+
   <section id="opening" class="snap-section hero">
-    <video class="bg-video" autoplay muted loop playsinline preload="auto" poster="assets/img/poster-portrait.jpg">
-      <source src="assets/video/cover-portrait.mp4" media="(max-aspect-ratio: 1/1)" type="video/mp4">
-      <source src="assets/video/cover-landscape.mp4" type="video/mp4">
-    </video>
     <div class="bg-scrim"></div>
 
     <div class="hero-inner reveal">
@@ -140,8 +142,7 @@
 
   <!-- ─── PAGE 4 · EVENT DETAILS ─── -->
   <section id="events" class="snap-section events">
-    <img class="bg-img" src="assets/img/g08.jpg" alt="">
-    <div class="bg-scrim scrim-heavy"></div>
+      <div class="bg-scrim scrim-heavy"></div>
 
     <div class="events-inner">
       <article class="event-card reveal">
@@ -172,35 +173,9 @@
     </div>
   </section>
 
-  <!-- ─── PAGE 5 · LOVE STORY ─── -->
-  <section id="lovestory" class="snap-section lovestory">
-    <img class="bg-img blurred" src="assets/img/g05.jpg" alt="">
-    <div class="bg-scrim scrim-heavy"></div>
-
-    <h2 class="story-title reveal">The Path Where Two Hearts Unite</h2>
-
-    <div class="story-track" id="story-track">
-      <div class="story-card story-photo"><img src="assets/img/g12.jpg" alt="" loading="lazy"></div>
-      <div class="story-card">
-        <h3>How We Met</h3>
-        <p data-fill="story-1">Our story began quietly, in the ordinary rhythm of everyday life. What started as easy conversation slowly turned into something steadier — a friendship that felt like coming home.</p>
-      </div>
-      <div class="story-card">
-        <h3>Growing Together</h3>
-        <p data-fill="story-2">Season after season we grew, not only as two people but as one team. We travelled, we laughed, we weathered the harder days, and we found a thousand small reasons to keep choosing each other.</p>
-      </div>
-      <div class="story-card">
-        <h3>The Proposal</h3>
-        <p data-fill="story-3">And then came the question we had both been quietly carrying. With joyful hearts we step into this next chapter — and we would love for you to stand beside us as we begin it.</p>
-      </div>
-    </div>
-
-    <div class="story-cue"><span>Scroll to read more</span><i></i></div>
-  </section>
 
   <!-- ─── PAGE 6 · DRESS CODE ─── -->
   <section id="dresscode" class="snap-section dresscode">
-    <img class="bg-img" src="assets/img/landing.jpg" alt="">
     <div class="bg-scrim scrim-heavy"></div>
     <p class="ghost-names abs">VALERIE &amp; JOHAN</p>
 
@@ -220,8 +195,7 @@
 
   <!-- ─── PAGE 7 · RSVP ─── -->
   <section id="rsvp" class="snap-section rsvp">
-    <img class="bg-img" src="assets/img/g09.jpg" alt="">
-    <div class="bg-scrim scrim-heavy"></div>
+      <div class="bg-scrim scrim-heavy"></div>
 
     <div class="rsvp-inner reveal">
       <div class="eyebrow-rule"><span>RSVP</span><i></i></div>
@@ -260,8 +234,7 @@
 
   <!-- ─── PAGE 8 · WISHES ─── -->
   <section id="wishes" class="snap-section wishes">
-    <img class="bg-img" src="assets/img/g02.jpg" alt="">
-    <div class="bg-scrim scrim-heavy"></div>
+      <div class="bg-scrim scrim-heavy"></div>
 
     <div class="wishes-inner reveal">
       <div class="eyebrow-rule"><span>WISHES</span><i></i></div>
@@ -276,8 +249,7 @@
 
   <!-- ─── PAGE 9 · GALLERY ─── -->
   <section id="gallery" class="snap-section gallery">
-    <img class="bg-img blurred" src="assets/img/g11.jpg" alt="">
-    <div class="bg-scrim scrim-heavy"></div>
+      <div class="bg-scrim scrim-heavy"></div>
 
     <div class="marquee" data-dir="left">
       <div class="marquee-track" id="row-a"></div>

@@ -18,8 +18,12 @@ assets/img|video|audio/
 google-apps-script/Code.gs      RSVP backend (paste into the Sheet)
 ```
 
-Screen order: **Intro → Cover → Hero → Bride → Groom → Events → Love Story →
+Screen order: **Intro → Cover → Hero → Bride → Groom → Events →
 Dress Code → RSVP → Wishes → Gallery → Closing.**
+
+One `<video>` runs fixed behind every page (`#bg-video`); bride, groom and
+closing cover it with their own photos, everything else shows it through a
+scrim. The love-story page was removed at the couple's request.
 
 ## Guest links
 
@@ -52,11 +56,8 @@ saving alone does not update the live web app.
 
 ## Still to fill in
 
-Search the HTML for `data-fill` — every remaining placeholder is tagged:
-
-| Tag | What |
-|---|---|
-| `story-1` / `story-2` / `story-3` | Love-story chapter copy (draft in place, keep or rewrite) |
+None — the love-story page (which held the last `data-fill` placeholders)
+has been removed.
 
 Filled in already: parents' names both sides, and Caroline Astor Ballroom for
 both events. Instagram links were removed at the couple's request — the bride

@@ -98,6 +98,7 @@ $('#open-invitation').addEventListener('click', () => {
   setTimeout(() => { cover.style.display = 'none'; }, 1000);
 
   startMusic();
+  armReveals();
   $('#music-toggle').classList.add('show');
   $('#nav-toggle').classList.add('show');
   trackOpen();
@@ -157,7 +158,11 @@ $$('.nav-menu a').forEach(a => {
 const io = new IntersectionObserver(entries => {
   entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
 }, { threshold: 0.18 });
-$$('.reveal').forEach(el => io.observe(el));
+/* Armed when the invitation opens, not at load: the hero sits behind the
+   cover and would be marked "in" while invisible — then whether its fade
+   showed depended on a load-timing race that differed between phone and
+   desktop. Arming on open makes every first fade identical everywhere. */
+function armReveals () { $$('.reveal').forEach(el => io.observe(el)); }
 
 /* ═══════════ 6 · GALLERY ═══════════ */
 
