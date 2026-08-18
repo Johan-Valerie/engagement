@@ -30,30 +30,26 @@
   --milton:"Milton One","Pinyon Script",cursive;   /* cover names + ampersand */
   --ui:"Poppins",system-ui,sans-serif;
   --serif-light:"Cormorant",Georgia,serif;
+
+  --vh:100vh;
 }
+@supports (height:100dvh){ :root{ --vh:100dvh; } }
 
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
 
-/* The root NEVER scrolls. #main is the scroll container instead, so the
-   phone's URL bar can never hide — which means there is no dynamic viewport
-   at all, and svh/lvh/dvh can never disagree. This is what finally killed
-   the "next page peeking under the URL bar" gap. */
+/* Same recipe as the wedding invitation, which is proven on the couple's
+   own phone: the root scrolls (so the URL bar still auto-hides) and every
+   section is given an EXACT height from --vh — never a min-height, which
+   is only a floor and lets a section end short of the screen. */
 html{
-  overflow:hidden;
+  scroll-snap-type:y mandatory;
+  overflow:hidden;                 /* released after OPEN INVITATION */
+  scroll-behavior:smooth;
   background:var(--bg);
   -webkit-text-size-adjust:100%;
 }
-
-#main{
-  position:fixed;inset:0;          /* exactly the visible area, no unit guessing */
-  overflow:hidden;                 /* released after OPEN INVITATION */
-  scroll-snap-type:y mandatory;
-  scroll-behavior:smooth;
-  overscroll-behavior-y:contain;   /* no rubber-banding out of the deck */
-  -webkit-overflow-scrolling:touch;
-}
-html.unlocked #main{overflow-y:scroll}
+html.unlocked{overflow:visible}
 
 body{
   margin:0;
@@ -347,10 +343,10 @@ a{color:inherit;text-decoration:none}
 
 .snap-section{
   position:relative;
-  /* 100% of #main, which is pinned to the viewport — so a section is always
-     exactly as tall as what you can see, never shorter. min- (not height:)
-     so a long page like RSVP can still grow and scroll inside itself. */
-  min-height:100%;
+  /* EXACT height, never min-height — this is the wedding site's rule and the
+     one thing the engagement site was missing. overflow-y:auto keeps long
+     pages (RSVP) scrolling inside themselves instead of clipping. */
+  height:var(--vh);
   scroll-snap-align:start;
   scroll-snap-stop:always;
   overflow-y:auto;
