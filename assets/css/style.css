@@ -303,7 +303,7 @@ a{color:inherit;text-decoration:none}
   font-weight:600;font-size:16px;margin:6px 0 0;position:relative;
 }
 .parents{font-weight:300;font-size:15px;line-height:1.5;margin:8px 0 0;position:relative}
-.ig{margin-top:2px}
+.pname{white-space:nowrap}   /* break the line at the ampersand, never mid-name */
 
 /* ─── Page 4 · events ─── */
 .events{justify-content:center}

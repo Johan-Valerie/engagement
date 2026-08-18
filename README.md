@@ -52,14 +52,15 @@ saving alone does not update the live web app.
 
 ## Still to fill in
 
-Search the HTML for `data-fill` — every placeholder is tagged:
+Search the HTML for `data-fill` — every remaining placeholder is tagged:
 
 | Tag | What |
 |---|---|
-| `bride-parents` / `groom-parents` | "Daughter of / Son of" lines |
-| `bride-ig` / `groom-ig` | Instagram handles (also update the `href`) |
-| `teapai-room` / `reception-room` | St. Regis room names |
-| `story-1` / `story-2` / `story-3` | Love-story chapter copy (draft in place) |
+| `story-1` / `story-2` / `story-3` | Love-story chapter copy (draft in place, keep or rewrite) |
+
+Filled in already: parents' names both sides, and Caroline Astor Ballroom for
+both events. Instagram links were removed at the couple's request — the bride
+and groom pages end on the parents' line.
 
 Also worth confirming: the dress-code swatch hexes in `style.css` (`.dc-swatches`)
 and the Google Maps links, currently a generic search URL rather than a pinned
