@@ -33,7 +33,13 @@
 
   --vh:100vh;
 }
-@supports (height:100dvh){ :root{ --vh:100dvh; } }
+/* LARGE viewport, not dynamic. The phone's URL bar is translucent and the
+   page is painted underneath it, so dvh — which stops at the bar's top edge
+   — left the next section showing through the glass. lvh includes the area
+   behind the bar, so what shows through is this section's own background.
+   (100vh already means the large viewport on mobile; lvh states it and is
+   exact on desktop too.) */
+@supports (height:100lvh){ :root{ --vh:100lvh; } }
 
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
