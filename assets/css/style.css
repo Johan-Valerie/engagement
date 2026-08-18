@@ -31,15 +31,7 @@
   --ui:"Poppins",system-ui,sans-serif;
   --serif-light:"Cormorant",Georgia,serif;
 
-  --vh:100vh;
 }
-/* dvh, exactly as the wedding invitation does it. That site has no
-   theme-color meta, so the browser keeps its own opaque toolbar and the page
-   is never painted underneath it — which is why dvh has always been correct
-   there. This page now drops theme-color too, so the same holds here.
-   (If the bar ever renders see-through again, this is the line to switch
-   to 100lvh — that sizes pages behind the bar instead.) */
-@supports (height:100dvh){ :root{ --vh:100dvh; } }
 
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -234,9 +226,9 @@ a{color:inherit;text-decoration:none}
 
 #cover-section{
   position:fixed;inset:0;z-index:10;
-  /* no explicit height: inset:0 tracks the visual viewport exactly, so the
-     cover stays full-screen whether the browser bar is expanded or collapsed.
-     A 100svh height left a gap (page 2 peeking) once the bar collapsed. */
+  /* the reference's cover rule verbatim: svh here (not vh) because the cover
+     is a single pinned screen, so it should hug the smallest viewport */
+  height:100vh;height:100svh;
   width:100%;
   overflow:hidden;
   transition:opacity 1s,transform 1s;
@@ -349,10 +341,12 @@ a{color:inherit;text-decoration:none}
 
 .snap-section{
   position:relative;
-  /* EXACT height, never min-height — this is the wedding site's rule and the
-     one thing the engagement site was missing. overflow-y:auto keeps long
-     pages (RSVP) scrolling inside themselves instead of clipping. */
-  height:var(--vh);
+  /* Verbatim from the reference's own stylesheet:
+       .snap-section{ min-height:100vh; overflow-y:scroll;
+                      scroll-snap-align:start; scroll-snap-stop:always }
+     Plain vh — not svh/dvh/lvh. On a phone 100vh is the LARGE viewport, so
+     a page always extends behind the URL bar however that bar is drawn. */
+  min-height:100vh;
   scroll-snap-align:start;
   scroll-snap-stop:always;
   overflow-y:auto;
@@ -365,8 +359,32 @@ a{color:inherit;text-decoration:none}
 .snap-section > *:not(.bg-img):not(.bg-video):not(.bg-scrim):not(.abs){position:relative;z-index:2}
 .snap-section > .abs{position:absolute;z-index:2}
 
-.reveal{opacity:0;transform:translateY(26px);transition:opacity .9s ease,transform .9s ease}
-.reveal.in{opacity:1;transform:none}
+/* ─── reveal system, ported from the reference ───────────────────
+   Elements carry .reanimate plus a direction (.fade / .up / .left /
+   .right) and a .delayNms stagger. The observer adds .in-view on entry
+   and REMOVES it on exit, so every page replays its animation each time
+   you scroll back to it — the reference's "reanimate" behaviour.      */
+.fade{opacity:0;transition:opacity 2s}
+.fade.reanimate.in-view{opacity:1;transition:opacity 2s}
+
+.up{transform:translateY(30px);opacity:0;transition:opacity 1s,transform 2s}
+.up.reanimate.in-view{transform:translateY(0);opacity:1;transition:opacity 1s,transform 2s}
+
+.left{transform:translateX(-100px);opacity:0;transition:opacity 1.5s,transform 2s}
+.left.reanimate.in-view{transform:translateX(0);opacity:1;transition:opacity 1.5s,transform 2s}
+
+.right{transform:translateX(100px);opacity:0;transition:opacity 1s,transform 2s}
+.right.reanimate.in-view{transform:translateX(0);opacity:1;transition:opacity 1s,transform 2s}
+
+.delay100ms{transition-delay:.1s!important}
+.delay200ms{transition-delay:.2s!important}
+.delay300ms{transition-delay:.3s!important}
+.delay400ms{transition-delay:.4s!important}
+.delay500ms{transition-delay:.5s!important}
+.delay600ms{transition-delay:.6s!important}
+.delay700ms{transition-delay:.7s!important}
+.delay800ms{transition-delay:.8s!important}
+.delay1000ms{transition-delay:1s!important}
 
 /* ─── Page 1 · hero ─── */
 .hero{justify-content:center;align-items:center;text-align:center}
@@ -591,7 +609,7 @@ a{color:inherit;text-decoration:none}
 
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .reveal{opacity:1;transform:none;transition:none}
+  .fade,.up,.left,.right{opacity:1;transform:none;transition:none}
   .marquee[data-dir] .marquee-track{animation:none}
   /* the intro is opacity-only, so it already respects reduced motion */
 }

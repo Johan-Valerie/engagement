@@ -155,14 +155,25 @@ $$('.nav-menu a').forEach(a => {
 
 /* ═══════════ 5 · SCROLL REVEALS ═══════════ */
 
+/* The reference's observer, same settings: it ADDS in-view on entry and
+   REMOVES it on exit, so each page replays its stagger every time you come
+   back to it, instead of firing once and staying put. */
 const io = new IntersectionObserver(entries => {
-  entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
-}, { threshold: 0.18 });
-/* Armed when the invitation opens, not at load: the hero sits behind the
-   cover and would be marked "in" while invisible — then whether its fade
-   showed depended on a load-timing race that differed between phone and
-   desktop. Arming on open makes every first fade identical everywhere. */
-function armReveals () { $$('.reveal').forEach(el => io.observe(el)); }
+  entries.forEach(en => en.target.classList.toggle('in-view', en.isIntersecting));
+}, { root: null, rootMargin: '-10px 0px -10px 0px', threshold: 0.01 });
+
+/* Armed on open, not at load: the hero sits behind the cover and would be
+   marked in-view while invisible, so its first fade would be missed.
+   The observer's first callback can lag by seconds on the busy frame right
+   after opening (video decode + fonts), which left the hero blank, so
+   anything already on screen is marked in-view directly. */
+function armReveals () {
+  $$('.reanimate').forEach(el => {
+    io.observe(el);
+    const r = el.getBoundingClientRect();
+    if (r.top < innerHeight && r.bottom > 0) el.classList.add('in-view');
+  });
+}
 
 /* ═══════════ 6 · GALLERY ═══════════ */
 
