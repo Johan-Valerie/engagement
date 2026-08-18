@@ -144,10 +144,20 @@ a{color:inherit;text-decoration:none}
   opacity:0;
   animation:1.6s fadeInOut .3s ease-in-out forwards;
 }
+/* "Dear," and "You are invited to" borrow the cover's apology type:
+   Cormorant italic, small and quiet. The guest name sits between them
+   in the display face, uppercased in CSS so any ?to= casing works.   */
 .intro-greeting .lead{
-  display:block;color:rgba(255,255,255,.9);
-  font-family:var(--display);font-size:12.5px;font-weight:400;
-  letter-spacing:.6px;line-height:2;
+  display:block;
+  font-family:var(--serif-light);font-style:italic;font-weight:400;
+  font-size:11.5px;letter-spacing:normal;line-height:1.9;
+  color:rgba(255,255,255,.72);   /* .6 like the cover reads too dim on the black scrim */
+}
+.intro-greeting .guest{
+  display:block;
+  font-family:var(--display);font-weight:600;
+  font-size:14px;letter-spacing:3px;text-transform:uppercase;
+  line-height:1.7;color:#fff;margin:3px 0 5px;
 }
 .first-text{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
