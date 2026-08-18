@@ -96,6 +96,7 @@ a{color:inherit;text-decoration:none}
 .datestrip{
   font-family:var(--display);font-weight:400;
   font-size:13.5px;letter-spacing:1.2px;margin:14px 0 0;
+  text-transform:uppercase;
 }
 .name-lg{
   font-family:var(--display);font-weight:500;
@@ -343,8 +344,12 @@ a{color:inherit;text-decoration:none}
 .hero-inner{max-width:520px}
 .names-centred{position:relative;display:flex;flex-direction:column;align-items:center}
 .amp-centred{
-  font-family:var(--script);font-size:clamp(80px,22vw,120px);
-  color:var(--ghost-25);margin:-18px 0 -14px;line-height:.8;
+  font-family:var(--milton);font-weight:700;
+  /* Milton's & ink is only ~57% of its em — sized up ~1.45x to keep the same
+     optical presence the Pinyon glyph had */
+  font-size:clamp(116px,32vw,174px);
+  /* .4 like the cover's ghost — Milton's hairlines vanish at 25% */
+  color:rgba(255,255,255,.4);margin:-.42em 0 -.34em;line-height:.8;
 }
 .scroll-cue{
   position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
@@ -354,7 +359,18 @@ a{color:inherit;text-decoration:none}
   writing-mode:vertical-rl;font-size:9.5px;letter-spacing:3px;
   color:var(--ghost-60);
 }
-.scroll-cue i{width:1px;height:34px;background:linear-gradient(var(--ghost-60),transparent)}
+/* Line wipe traced from the reference's Lottie (scroll-white.json, 30fps/60f):
+   draws downward 0-43%, erases downward 43-63%, rests until the 2s loop. */
+.scroll-cue i{
+  width:1px;height:34px;background:linear-gradient(var(--ghost-60),transparent);
+  animation:cue-line 2s ease-in-out infinite;
+}
+@keyframes cue-line{
+  0%    {clip-path:inset(0 0 100% 0)}
+  43.3% {clip-path:inset(0 0 0 0)}
+  63.3% {clip-path:inset(100% 0 0 0)}
+  100%  {clip-path:inset(100% 0 0 0)}
+}
 
 /* ─── Pages 2–3 · bride / groom ─── */
 .person{justify-content:flex-end}
@@ -575,7 +591,7 @@ a{color:inherit;text-decoration:none}
 @media (min-width:1025px){
   .hero-inner,.closing-inner,.dc-inner{max-width:620px}
   .name-lg{font-size:78px}
-  .amp-centred{font-size:108px;margin:-24px 0 -20px}
+  .amp-centred{font-size:157px}
   .hero .bg-scrim{background:linear-gradient(rgba(0,0,0,.42) 0%,rgba(0,0,0,.34) 45%,rgba(0,0,0,.55) 100%)}
   .events-inner{max-width:720px}
   .marquee img{height:246px}
