@@ -225,12 +225,68 @@ const rowA = PHOTOS.slice(0, 7);
 const rowB = PHOTOS.slice(7);
 
 function fillRow (el, list) {
-  /* duplicated once so the -50% translate loops seamlessly */
+  /* the list is laid down twice so the wrap at the halfway mark is invisible */
   el.innerHTML = [...list, ...list]
     .map(src => `<img src="${src}" alt="" loading="lazy" data-src="${src}">`).join('');
 }
 fillRow($('#row-a'), rowA);
 fillRow($('#row-b'), rowB);
+
+/* Each row drifts on its own by nudging scrollLeft. Driving the real
+   scroll position (instead of animating a transform inside a clipped box)
+   is what makes the gallery usable on a phone: the strip is a native
+   scroller, so a swipe takes over instantly, and the drift resumes a
+   moment after the finger leaves. Reduce Motion stops the drift but
+   leaves the swiping. */
+function driftRow (row, dir, pxPerSecond) {
+  const reduce  = matchMedia('(prefers-reduced-motion: reduce)');
+  const halfway = () => row.scrollWidth / 2;
+  let hovering = false, resumeAt = 0, last = 0;
+  let pos = 0;   /* the drift's own position, kept as a float — see tick() */
+
+  /* the right-hand row travels backwards, so it starts on the second copy */
+  const seed = () => {
+    if (!row.scrollWidth) return;
+    pos = dir === 'right' ? halfway() : 0;
+    row.scrollLeft = pos;
+  };
+  seed();
+  addEventListener('load', seed, { once: true });
+
+  const handOver = () => { resumeAt = performance.now() + 1600; };
+  ['touchstart', 'touchmove', 'touchend', 'wheel', 'pointerdown']
+    .forEach(ev => row.addEventListener(ev, handOver, { passive: true }));
+  row.addEventListener('mouseenter', () => { hovering = true; });
+  row.addEventListener('mouseleave', () => { hovering = false; });
+
+  const tick = now => {
+    const dt = last ? Math.min((now - last) / 1000, 0.05) : 0;   /* cap after a stall */
+    last = now;
+    const half = halfway();
+    const free = !hovering && now >= resumeAt && !reduce.matches && !document.hidden;
+
+    if (half > 0 && free) {
+      /* The position is accumulated here as a float and only then written
+         out. Reading scrollLeft back each frame instead loses the
+         sub-pixel remainder to the browser's rounding, so a drift this
+         slow (under half a pixel per frame) rounds away to nothing and
+         the strip sits perfectly still. */
+      pos += (dir === 'left' ? 1 : -1) * pxPerSecond * dt;
+      /* wrap on the side this row travels towards — wrapping both ends
+         would bounce the strip between 0 and the halfway mark forever */
+      if (dir === 'left') { if (pos >= half) pos -= half; }
+      else                { if (pos <= 0)    pos += half; }
+      row.scrollLeft = pos;
+    } else {
+      pos = row.scrollLeft;   /* a finger is in charge — follow it */
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+/* the .marquee wrapper is the scroller; #row-* is the track inside it */
+driftRow($('#row-a').closest('.marquee'), 'left', 26);
+driftRow($('#row-b').closest('.marquee'), 'right', 22);
 
 const lb     = $('#lightbox');
 const lbImg  = $('#lb-img');
@@ -246,9 +302,25 @@ function stepLightbox (d) {
   lbIdx = (lbIdx + d + lbList.length) % lbList.length;
   lbImg.src = lbList[lbIdx];
 }
-$$('.marquee').forEach(m => m.addEventListener('click', e => {
-  if (e.target.tagName === 'IMG') openLightbox(e.target.dataset.src);
-}));
+/* Tap opens the slideshow, swipe just scrolls. The listener goes on each
+   image rather than the row: iOS delivers taps to the element itself far
+   more reliably than to a delegating parent, and a swipe that happens to
+   end on a photo must not open anything. */
+$$('.marquee').forEach(row => {
+  let sx = 0, sy = 0, swiped = false;
+  row.addEventListener('touchstart', e => {
+    const t = e.touches[0]; sx = t.clientX; sy = t.clientY; swiped = false;
+  }, { passive: true });
+  row.addEventListener('touchmove', e => {
+    const t = e.touches[0];
+    if (Math.abs(t.clientX - sx) > 8 || Math.abs(t.clientY - sy) > 8) swiped = true;
+  }, { passive: true });
+
+  $$('img', row).forEach(img => img.addEventListener('click', () => {
+    if (swiped) { swiped = false; return; }
+    openLightbox(img.dataset.src);
+  }));
+});
 $('#lb-close').addEventListener('click', () => { lb.hidden = true; });
 $('#lb-prev').addEventListener('click', () => stepLightbox(-1));
 $('#lb-next').addEventListener('click', () => stepLightbox(1));
