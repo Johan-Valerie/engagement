@@ -101,6 +101,8 @@ $('#open-invitation').addEventListener('click', () => {
 
   enableScrolling();
   MAIN.scrollTop = 0;
+  primeVideo();          /* no-op if it already started during the intro */
+  loadPagePhotos();      /* ditto — guarantees pages 2+ have their photos */
   startMusic();
   armReveals();
   $('#music-toggle').classList.add('show');
@@ -111,6 +113,44 @@ $('#open-invitation').addEventListener('click', () => {
     MAIN.style.scrollSnapType = 'y mandatory';
   }, 600);
 });
+
+/* The background video is 2.2MB and nobody can see it until OPEN
+   INVITATION is pressed, which cannot happen before the intro ends ~6.6s
+   in. Left on preload="auto" it started immediately and swallowed most of
+   the bandwidth, so the cover photo — the first thing anyone actually
+   looks at — landed seconds late. It now waits for the cover photo to
+   arrive and then buffers through the rest of the intro, which is dead
+   airtime anyway. */
+const bgVideo = $('#bg-video');
+function primeVideo () {
+  if (!bgVideo || bgVideo.dataset.primed) return;
+  bgVideo.dataset.primed = '1';
+  bgVideo.preload = 'auto';
+  bgVideo.load();
+  bgVideo.play().catch(() => {});   /* muted playback; a gesture retries below */
+}
+/* The bride, groom and closing photos sit behind the cover too. Marking
+   them loading="lazy" was not enough — they are only one screen down, so
+   the browser fetched them at once anyway and they beat the cover photo
+   to the wire. Holding their src back puts them last in the queue, where
+   they belong: nobody reaches page 2 before the intro is over. */
+function loadPagePhotos () {
+  $$('img[data-src]').forEach(img => {
+    img.src = img.dataset.src;
+    img.removeAttribute('data-src');
+  });
+}
+
+const coverPhoto = $('#cover-bg');
+function afterCover () {
+  primeVideo();
+  /* the video gets a head start; the page photos follow it */
+  if (bgVideo) bgVideo.addEventListener('loadeddata', loadPagePhotos, { once: true });
+  setTimeout(loadPagePhotos, 2500);
+}
+if (coverPhoto && coverPhoto.complete) afterCover();
+else if (coverPhoto) coverPhoto.addEventListener('load', afterCover, { once: true });
+setTimeout(afterCover, 3500);       /* safety net if the photo errors or stalls */
 
 /* background video: iOS/Android refuse autoplay until a gesture */
 const kickVideos = () => $$('video').forEach(v => { if (v.paused) v.play().catch(() => {}); });
