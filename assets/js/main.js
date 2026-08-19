@@ -239,8 +239,8 @@ fillRow($('#row-b'), rowB);
    moment after the finger leaves. Reduce Motion stops the drift but
    leaves the swiping. */
 function driftRow (row, dir, pxPerSecond) {
-  const reduce  = matchMedia('(prefers-reduced-motion: reduce)');
-  const halfway = () => row.scrollWidth / 2;
+  const halfway  = () => row.scrollWidth / 2;
+  const realMouse = matchMedia('(hover: hover) and (pointer: fine)');
   let hovering = false, resumeAt = 0, last = 0;
   let pos = 0;   /* the drift's own position, kept as a float — see tick() */
 
@@ -256,14 +256,24 @@ function driftRow (row, dir, pxPerSecond) {
   const handOver = () => { resumeAt = performance.now() + 1600; };
   ['touchstart', 'touchmove', 'touchend', 'wheel', 'pointerdown']
     .forEach(ev => row.addEventListener(ev, handOver, { passive: true }));
-  row.addEventListener('mouseenter', () => { hovering = true; });
-  row.addEventListener('mouseleave', () => { hovering = false; });
+  /* Hover-pause only where a real pointer exists. iOS fires a synthetic
+     mouseenter when you tap and never sends the matching mouseleave, so
+     on a phone this used to latch and stop the drift for good after the
+     first swipe. */
+  if (realMouse.matches) {
+    row.addEventListener('mouseenter', () => { hovering = true; });
+    row.addEventListener('mouseleave', () => { hovering = false; });
+  }
 
   const tick = now => {
     const dt = last ? Math.min((now - last) / 1000, 0.05) : 0;   /* cap after a stall */
     last = now;
     const half = halfway();
-    const free = !hovering && now >= resumeAt && !reduce.matches && !document.hidden;
+    /* Deliberately NOT gated on prefers-reduced-motion: the couple asked
+       for the strips to keep moving, and a slow sideways photo drift is
+       not the kind of motion that setting exists to suppress. The page
+       reveals still honour it (they drop their travel and only fade). */
+    const free = !hovering && now >= resumeAt && !document.hidden;
 
     if (half > 0 && free) {
       /* The position is accumulated here as a float and only then written

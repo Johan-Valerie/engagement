@@ -564,7 +564,9 @@ a{color:inherit;text-decoration:none}
 .marquee{
   width:100%;
   overflow-x:auto;overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;
+  /* no -webkit-overflow-scrolling:touch — the legacy iOS scroll layer it
+     creates can swallow programmatic scrollLeft writes, which is what the
+     drift uses. Momentum scrolling is the default on iOS 13+ anyway. */
   overscroll-behavior-x:contain;   /* a swipe here never turns into a page swipe */
   scrollbar-width:none;
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
