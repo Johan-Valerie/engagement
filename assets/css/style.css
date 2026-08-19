@@ -318,7 +318,7 @@ a{color:inherit;text-decoration:none}
 /* ═══════════════ CHROME ═══════════════ */
 
 /* The menu button is our bare monogram — no frame, no fill. Open/close is a
-   40° turn of the mark rather than a morph to an X. */
+   45° turn of the mark rather than a morph to an X. */
 .nav-toggle{
   position:fixed;top:22px;right:22px;
   z-index:40;width:42px;height:42px;
@@ -331,7 +331,7 @@ a{color:inherit;text-decoration:none}
   transform:rotate(0);
   transition:transform .45s cubic-bezier(.4,0,.2,1);
 }
-.nav-toggle.open .nav-mono{transform:rotate(40deg)}
+.nav-toggle.open .nav-mono{transform:rotate(45deg)}
 
 .nav-menu{
   position:fixed;inset:0;z-index:35;
