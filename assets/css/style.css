@@ -435,27 +435,27 @@ a{color:inherit;text-decoration:none}
 
 /* ─── Pages 2–3 · bride / groom ─── */
 .person{justify-content:flex-end}
-.side-label{
-  position:absolute;top:78px;left:22px;
-  z-index:2;display:flex;flex-direction:column;align-items:center;gap:14px;
-}
-.side-label span{
-  writing-mode:vertical-rl;transform:rotate(180deg);
+/* The label sits with the name rather than rotated in the far corner:
+   it reads as the first line of the block, the way the reference sets it. */
+.person-label{
   font-weight:600;font-size:12px;letter-spacing:3px;
+  color:rgba(255,255,255,.86);
+  margin:0 0 13px;position:relative;
 }
-.side-label i{width:1px;height:120px;background:linear-gradient(var(--ghost-50),transparent)}
 
 .person-inner{max-width:560px;width:100%}
 .person-name{position:relative}
+/* the script repeat is a watermark BEHIND the name — at top:52% it hung
+   below the name instead and ran straight through the full name line */
 .name-echo{
-  position:absolute;left:8px;top:52%;
+  position:absolute;left:8px;top:50%;transform:translateY(-50%);
   font-family:var(--script);font-size:clamp(56px,17vw,92px);
   color:var(--ghost-25);margin:0;line-height:1;pointer-events:none;white-space:nowrap;
 }
 .fullname{
-  font-weight:600;font-size:16px;margin:6px 0 0;position:relative;
+  font-weight:600;font-size:16px;margin:17px 0 0;position:relative;
 }
-.parents{font-weight:300;font-size:15px;line-height:1.5;margin:8px 0 0;position:relative}
+.parents{font-weight:300;font-size:15px;line-height:1.55;margin:15px 0 0;position:relative}
 .pname{white-space:nowrap}   /* break the line at the ampersand, never mid-name */
 
 /* ─── Page 4 · events ─── */
