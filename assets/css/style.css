@@ -559,6 +559,13 @@ a{color:inherit;text-decoration:none}
   background:rgba(255,255,255,.06);transition:background .25s,border-color .25s;
 }
 .toggle-btn.active{background:rgba(255,255,255,.34);border-color:rgba(255,255,255,.8)}
+.rsvp-step{display:flex;flex-direction:column;gap:14px}
+#guest-fields{display:flex;flex-direction:column;gap:14px}
+.step-back{
+  align-self:center;font-size:12.5px;letter-spacing:.6px;
+  color:rgba(255,255,255,.75);padding:2px 8px;transition:color .25s;
+}
+.step-back:hover{color:#fff}
 .form-note{font-size:12.5px;margin:2px 0 0;min-height:1em;color:rgba(255,255,255,.9)}
 .form-note.err{color:#ffb4a8}
 

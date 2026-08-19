@@ -14,23 +14,46 @@
  *
  * Changing doGet/doPost later needs Deploy → Manage deployments →
  * edit → New version. Saving alone does NOT update the live web app.
+ *
+ * THE THREE TABS
+ *   Invitation — one row per invitation (what used to be "Guests"). Column A
+ *                is the invitation number, filled by formula from the row, so
+ *                it is stable and never needs typing.
+ *   Guest List — one row per confirmed person, carrying the invitation number
+ *                they belong to. Written by the site, not by hand: it is
+ *                rebuilt for an invitation every time that invitation
+ *                re-submits, so it always matches the latest answer.
+ *   RSVP       — the raw submissions, one row per invitation, plus the
+ *                Approved checkbox that gates a wish onto the site.
+ *
+ * setup() is safe to re-run. It migrates by HEADER NAME, so a tab that was
+ * built by an earlier version of this file keeps its data even though the
+ * columns have moved — and it renames an existing "Guests" tab rather than
+ * leaving a stale duplicate behind.
  */
 
-var RSVP_SHEET   = 'RSVP';
-var GUESTS_SHEET = 'Guests';
-var DASH_SHEET   = 'Dashboard';
+var RSVP_SHEET  = 'RSVP';
+var INV_SHEET   = 'Invitation';
+var GLIST_SHEET = 'Guest List';
+var DASH_SHEET  = 'Dashboard';
+var LEGACY_INV  = 'Guests';          // pre-rename name, migrated on setup()
 
 var SITE_URL = 'https://johangw.github.io/johan-valerie-engagement/';
 var TZ       = 'Asia/Jakarta';
 
 /* RSVP columns (1-based) */
-var COL = { TIME:1, KEY:2, NAME:3, ATTENDING:4, PAX:5, WISHES:6, APPROVED:7 };
-var HEADERS = ['Timestamp','Guest link (key)','Name','Attending','Pax','Wishes','Approved'];
+var COL = { TIME:1, KEY:2, NAME:3, INVNO:4, ATTENDING:5, PAX:6, GUESTS:7, WISHES:8, APPROVED:9 };
+var HEADERS = ['Timestamp','Guest link (key)','Invitation name','Invitation no.',
+               'Attending','Pax','Guest names','Wishes','Approved'];
 
-/* Guests columns (1-based) */
-var GCOL = { NAME:1, COMPANION:2, SEATS:3, LINK:4, STATUS:5, PAX:6, FIRST:7, LAST:8, OPENS:9 };
-var GHEADERS = ['Guest name','Companion name','Max seats','Personalized link',
+/* Invitation columns (1-based) */
+var ICOL = { NO:1, NAME:2, COMPANION:3, SEATS:4, LINK:5, STATUS:6, PAX:7, FIRST:8, LAST:9, OPENS:10 };
+var IHEADERS = ['Invitation no.','Guest name','Companion name','Max seats','Personalized link',
                 'Status','Pax confirmed','First opened (WIB)','Last opened (WIB)','Opens'];
+
+/* Guest List columns (1-based) */
+var GLCOL = { NO:1, GUEST:2, INVNO:3, INVNAME:4, WHEN:5 };
+var GLHEADERS = ['No.','Guest name','Invitation no.','Invitation name','Confirmed (WIB)'];
 
 /* ═══════════════ ONE-TIME SETUP ═══════════════ */
 
@@ -38,101 +61,154 @@ function setup() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.setSpreadsheetTimeZone(TZ);
 
-  // ── RSVP tab ──
-  var r = ss.getSheetByName(RSVP_SHEET) || ss.insertSheet(RSVP_SHEET);
-  r.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS])
-   .setFontWeight('bold').setBackground('#292929').setFontColor('#ffffff');
-  r.setFrozenRows(1);
-  r.setColumnWidth(COL.WISHES, 340);
-  r.setColumnWidth(COL.KEY, 200);
+  setupRsvp_(ss);
+  setupInvitation_(ss);
+  setupGuestList_(ss);
+  setupDashboard_(ss);
 
-  // ── Guests tab (the control panel) ──
-  // Rebuilt by header name, so any earlier layout is preserved.
-  var g = ss.getSheetByName(GUESTS_SHEET);
-  var kept = [];
-  if (g && g.getLastRow() > 1) {
-    var head = g.getRange(1, 1, 1, g.getLastColumn()).getValues()[0];
-    var body = g.getRange(2, 1, g.getLastRow() - 1, g.getLastColumn()).getValues();
-    var idx = {};
-    head.forEach(function (h, i) { idx[String(h).trim()] = i; });
-    kept = body.map(function (row) {
-      var pick = function (name) {
-        return idx[name] === undefined ? '' : row[idx[name]];
-      };
-      return [pick('Guest name'), pick('Companion name'), pick('Max seats'),
-              pick('First opened (WIB)'), pick('Last opened (WIB)'), pick('Opens')];
-    }).filter(function (row) { return String(row[0]).trim() !== ''; });
-  }
-  if (g) ss.deleteSheet(g);
-  g = ss.insertSheet(GUESTS_SHEET);
+  SpreadsheetApp.getUi().alert(
+    'Setup complete.\n\n' +
+    'Tabs: Invitation (was "Guests", now with an invitation number), ' +
+    'Guest List (filled in by the site), RSVP, Dashboard.\n\n' +
+    'Now Deploy → Manage deployments → edit → New version, so the live web app ' +
+    'picks this up.');
+}
 
-  g.getRange(1, 1, 1, GHEADERS.length).setValues([GHEADERS])
+/** RSVP keeps its rows: they are re-read by header name and re-laid-out. */
+function setupRsvp_(ss) {
+  var s = ss.getSheetByName(RSVP_SHEET);
+  var kept = readByHeader_(s, HEADERS);
+
+  if (!s) s = ss.insertSheet(RSVP_SHEET);
+  s.clear();
+  s.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS])
    .setFontWeight('bold').setBackground('#292929').setFontColor('#ffffff');
-  g.setFrozenRows(1);
-  g.setColumnWidth(GCOL.NAME, 210);
-  g.setColumnWidth(GCOL.COMPANION, 180);
-  g.setColumnWidth(GCOL.LINK, 420);
+  s.setFrozenRows(1);
+  s.setColumnWidth(COL.KEY, 200);
+  s.setColumnWidth(COL.GUESTS, 260);
+  s.setColumnWidth(COL.WISHES, 340);
 
   if (kept.length) {
-    var out = kept.map(function (row) {
-      return [row[0], row[1], row[2] || 2, '', '', '', row[3], row[4], row[5]];
-    });
-    g.getRange(2, 1, out.length, GHEADERS.length).setValues(out);
+    s.getRange(2, 1, kept.length, HEADERS.length).setValues(kept);
+    s.getRange(2, COL.APPROVED, kept.length, 1).insertCheckboxes();
   }
+}
 
-  writeGuestFormulas_(g);
+/** "Guests" becomes "Invitation", gaining a formula-filled number in column A. */
+function setupInvitation_(ss) {
+  var s = ss.getSheetByName(INV_SHEET);
+  var legacy = ss.getSheetByName(LEGACY_INV);
 
-  // ── Dashboard ──
+  // An old "Guests" tab is the same data under old headers.
+  if (!s && legacy) { legacy.setName(INV_SHEET); s = legacy; legacy = null; }
+
+  var kept = readByHeader_(s, IHEADERS, {
+    'Invitation no.': ['No.'],
+    'Guest name': ['Guest name', 'Name']
+  });
+  if (!kept.length && legacy) kept = readByHeader_(legacy, IHEADERS);
+  if (legacy) ss.deleteSheet(legacy);
+
+  if (!s) s = ss.insertSheet(INV_SHEET);
+  s.clear();
+  s.getRange(1, 1, 1, IHEADERS.length).setValues([IHEADERS])
+   .setFontWeight('bold').setBackground('#292929').setFontColor('#ffffff');
+  s.setFrozenRows(1);
+  s.setColumnWidth(ICOL.NO, 110);
+  s.setColumnWidth(ICOL.NAME, 210);
+  s.setColumnWidth(ICOL.COMPANION, 180);
+  s.setColumnWidth(ICOL.LINK, 420);
+
+  // Rows with no guest name are noise from a previous layout.
+  kept = kept.filter(function (r) { return String(r[ICOL.NAME - 1]).trim() !== ''; });
+  if (kept.length) {
+    var out = kept.map(function (r) {
+      return ['', r[ICOL.NAME - 1], r[ICOL.COMPANION - 1], r[ICOL.SEATS - 1] || 2,
+              '', '', '', r[ICOL.FIRST - 1], r[ICOL.LAST - 1], r[ICOL.OPENS - 1]];
+    });
+    s.getRange(2, 1, out.length, IHEADERS.length).setValues(out);
+  }
+  writeInvitationFormulas_(s);
+}
+
+/** Written by the site. Setup only creates it and keeps whatever is there. */
+function setupGuestList_(ss) {
+  var s = ss.getSheetByName(GLIST_SHEET);
+  var kept = readByHeader_(s, GLHEADERS);
+
+  if (!s) s = ss.insertSheet(GLIST_SHEET);
+  s.clear();
+  s.getRange(1, 1, 1, GLHEADERS.length).setValues([GLHEADERS])
+   .setFontWeight('bold').setBackground('#292929').setFontColor('#ffffff');
+  s.setFrozenRows(1);
+  s.setColumnWidth(GLCOL.NO, 60);
+  s.setColumnWidth(GLCOL.GUEST, 230);
+  s.setColumnWidth(GLCOL.INVNO, 110);
+  s.setColumnWidth(GLCOL.INVNAME, 230);
+  s.setColumnWidth(GLCOL.WHEN, 160);
+
+  kept = kept.filter(function (r) { return String(r[GLCOL.GUEST - 1]).trim() !== ''; });
+  if (kept.length) s.getRange(2, 1, kept.length, GLHEADERS.length).setValues(kept);
+  renumberGuestList_(s);
+}
+
+function setupDashboard_(ss) {
   var d = ss.getSheetByName(DASH_SHEET) || ss.insertSheet(DASH_SHEET);
   d.clear();
   d.getRange('A1').setValue('ENGAGEMENT RSVP — DASHBOARD')
    .setFontWeight('bold').setFontSize(14);
   var rows = [
-    ['Guests invited',      '=COUNTA(Guests!A2:A)'],
-    ['Links opened',        '=COUNTIF(Guests!G2:G,"<>")'],
-    ['Responded',           '=COUNTA(RSVP!B2:B)'],
-    ['Attending',           '=COUNTIF(RSVP!D2:D,"Attend")'],
-    ['Not attending',       '=COUNTIF(RSVP!D2:D,"Not attend")'],
-    ['Total pax confirmed', '=SUM(RSVP!E2:E)'],
-    ['Seats allocated',     '=SUM(Guests!C2:C)'],
+    ['Invitations sent',     '=COUNTA(Invitation!B2:B)'],
+    ['Links opened',         '=COUNTIF(Invitation!H2:H,"<>")'],
+    ['Responded',            '=COUNTA(RSVP!B2:B)'],
+    ['Attending',            '=COUNTIF(RSVP!E2:E,"Attend")'],
+    ['Not attending',        '=COUNTIF(RSVP!E2:E,"Not attend")'],
+    ['Total pax confirmed',  '=SUM(RSVP!F2:F)'],
+    ['Names on guest list',  "=COUNTA('Guest List'!B2:B)"],
+    ['Seats allocated',      '=SUM(Invitation!D2:D)'],
     ['Wishes awaiting approval',
-     '=COUNTIFS(RSVP!F2:F,"<>",RSVP!G2:G,FALSE)']
+     '=COUNTIFS(RSVP!H2:H,"<>",RSVP!I2:I,FALSE)']
   ];
   d.getRange(3, 1, rows.length, 2).setValues(rows);
   d.getRange(3, 1, rows.length, 1).setFontWeight('bold');
   d.setColumnWidth(1, 220);
-
-  SpreadsheetApp.getUi().alert('Setup complete. Now Deploy → New deployment → Web app.');
 }
 
-/** Personalized link + live status mirrors, for every filled guest row. */
-function writeGuestFormulas_(g) {
-  var last = Math.max(g.getLastRow(), 2);
+/**
+ * Invitation number, personalized link and live status mirrors, for every
+ * filled row. The number is =ROW()-1 rather than a typed value so inserting or
+ * deleting a row can never leave two invitations sharing a number.
+ */
+function writeInvitationFormulas_(s) {
+  var last = Math.max(s.getLastRow(), 2);
   var n = last - 1;
   if (n < 1) return;
 
-  var key    = 'TRIM(A{r}) & IF(TRIM(B{r})="", "", " & " & TRIM(B{r}))';
-  var link   = '=IF(A{r}="","", "' + SITE_URL + '?to=" & ENCODEURL(' + key + ') & "&max=" & IF(C{r}="",2,C{r}))';
-  var status = '=IF(A{r}="","",' +
-                 'IFERROR(INDEX(RSVP!$D:$D, MATCH(' + key + ', RSVP!$B:$B, 0)),' +
-                   'IF(G{r}="", "Not opened", "Opened")))';
-  var pax    = '=IF(A{r}="","", IFERROR(INDEX(RSVP!$E:$E, MATCH(' + key + ', RSVP!$B:$B, 0)), ""))';
+  var key    = 'TRIM(B{r}) & IF(TRIM(C{r})="", "", " & " & TRIM(C{r}))';
+  var no     = '=IF(B{r}="","",ROW()-1)';
+  var link   = '=IF(B{r}="","", "' + SITE_URL + '?to=" & ENCODEURL(' + key + ') & "&max=" & IF(D{r}="",2,D{r}))';
+  var status = '=IF(B{r}="","",' +
+                 'IFERROR(INDEX(RSVP!$E:$E, MATCH(' + key + ', RSVP!$B:$B, 0)),' +
+                   'IF(H{r}="", "Not opened", "Opened")))';
+  var pax    = '=IF(B{r}="","", IFERROR(INDEX(RSVP!$F:$F, MATCH(' + key + ', RSVP!$B:$B, 0)), ""))';
 
-  var L = [], S = [], P = [];
+  var N = [], L = [], S = [], P = [];
   for (var i = 0; i < n; i++) {
     var r = i + 2;
+    N.push([no.replace(/\{r\}/g, r)]);
     L.push([link.replace(/\{r\}/g, r)]);
     S.push([status.replace(/\{r\}/g, r)]);
     P.push([pax.replace(/\{r\}/g, r)]);
   }
-  g.getRange(2, GCOL.LINK,   n, 1).setFormulas(L);
-  g.getRange(2, GCOL.STATUS, n, 1).setFormulas(S);
-  g.getRange(2, GCOL.PAX,    n, 1).setFormulas(P);
+  s.getRange(2, ICOL.NO,     n, 1).setFormulas(N);
+  s.getRange(2, ICOL.LINK,   n, 1).setFormulas(L);
+  s.getRange(2, ICOL.STATUS, n, 1).setFormulas(S);
+  s.getRange(2, ICOL.PAX,    n, 1).setFormulas(P);
 }
 
-/** Re-run after adding guest rows, to extend the formulas down. */
+/** Re-run after adding invitation rows, to extend the formulas down. */
 function refreshLinks() {
-  writeGuestFormulas_(sheet_(GUESTS_SHEET));
+  writeInvitationFormulas_(sheet_(INV_SHEET));
 }
 
 /* ═══════════════ WEB APP ═══════════════ */
@@ -149,15 +225,25 @@ function handleRsvp_(p) {
   var key = normKey_(p.key || p.name);
   if (!key) return json_({ ok: false, error: 'missing key' });
 
+  var name  = clean_(p.name, 120);
+  var going = clean_(p.attending, 20);
+  var names = Array.isArray(p.guests)
+    ? p.guests.map(function (n) { return clean_(n, 120); }).filter(String)
+    : [];
+
+  var invNo = invitationNo_(key);
+
   var sheet = sheet_(RSVP_SHEET);
   var row   = findRow_(sheet, key);
   var vals  = [
     new Date(),
     key,
-    clean_(p.name, 120),
-    clean_(p.attending, 20),
+    name,
+    invNo,
+    going,
     Number(p.pax) || 0,
-    clean_(p.wishes, 1000),
+    names.join(', '),
+    clean_(p.wishes, 1000)
   ];
 
   if (row) {
@@ -168,23 +254,60 @@ function handleRsvp_(p) {
     // checkbox added per row: pre-filling the column pushes new rows to the bottom
     sheet.getRange(row, COL.APPROVED).insertCheckboxes().setValue(false);
   }
+
+  syncGuestList_(invNo, name, going === 'Attend' ? names : []);
   return json_({ ok: true });
+}
+
+/**
+ * Replaces this invitation's block of the Guest List with the names just
+ * submitted. Matching on the invitation number when there is one and on the
+ * invitation name otherwise means a re-submission corrects the list instead of
+ * duplicating it — including someone who first said yes and later said no.
+ */
+function syncGuestList_(invNo, invName, names) {
+  var s = sheet_(GLIST_SHEET);
+  var last = s.getLastRow();
+
+  if (last > 1) {
+    var rows = s.getRange(2, 1, last - 1, GLHEADERS.length).getValues();
+    for (var i = rows.length - 1; i >= 0; i--) {
+      var mineByNo   = invNo && String(rows[i][GLCOL.INVNO - 1]) === String(invNo);
+      var mineByName = normKey_(rows[i][GLCOL.INVNAME - 1]) === normKey_(invName);
+      if (mineByNo || mineByName) s.deleteRow(i + 2);
+    }
+  }
+
+  if (names.length) {
+    var now = wib_(new Date());
+    var out = names.map(function (n) { return ['', n, invNo || '', invName, now]; });
+    s.getRange(s.getLastRow() + 1, 1, out.length, GLHEADERS.length).setValues(out);
+  }
+  renumberGuestList_(s);
+}
+
+function renumberGuestList_(s) {
+  var n = s.getLastRow() - 1;
+  if (n < 1) return;
+  var nums = [];
+  for (var i = 0; i < n; i++) nums.push([i + 1]);
+  s.getRange(2, GLCOL.NO, n, 1).setValues(nums);
 }
 
 function handleOpen_(p) {
   var key = normKey_(p.key);
   if (!key) return json_({ ok: false });
 
-  var g   = sheet_(GUESTS_SHEET);
-  var row = guestRow_(g, key);
+  var s   = sheet_(INV_SHEET);
+  var row = invitationRow_(s, key);
   if (!row) return json_({ ok: false });
 
   var now = wib_(new Date());
-  if (!String(g.getRange(row, GCOL.FIRST).getValue()).trim()) {
-    g.getRange(row, GCOL.FIRST).setValue(now);
+  if (!String(s.getRange(row, ICOL.FIRST).getValue()).trim()) {
+    s.getRange(row, ICOL.FIRST).setValue(now);
   }
-  g.getRange(row, GCOL.LAST).setValue(now);
-  g.getRange(row, GCOL.OPENS).setValue((Number(g.getRange(row, GCOL.OPENS).getValue()) || 0) + 1);
+  s.getRange(row, ICOL.LAST).setValue(now);
+  s.getRange(row, ICOL.OPENS).setValue((Number(s.getRange(row, ICOL.OPENS).getValue()) || 0) + 1);
   return json_({ ok: true });
 }
 
@@ -194,6 +317,7 @@ function doGet(e) {
   return json_(getWishes_());
 }
 
+/** The name on a wish is the invitation name — guests never type one. */
 function getWishes_() {
   var sheet = sheet_(RSVP_SHEET);
   if (sheet.getLastRow() < 2) return [];
@@ -220,8 +344,10 @@ function getStatus_(rawKey) {
   return {
     found: true,
     name:      String(v[COL.NAME - 1]),
+    invitation: v[COL.INVNO - 1],
     attending: String(v[COL.ATTENDING - 1]),
     pax:       Number(v[COL.PAX - 1]) || 0,
+    guests:    String(v[COL.GUESTS - 1]),
     wishes:    String(v[COL.WISHES - 1])
   };
 }
@@ -234,6 +360,31 @@ function sheet_(name) {
   return s;
 }
 
+/**
+ * Re-reads a tab into the given header order, looking each column up by its
+ * name. Columns that moved follow their header; columns that did not exist
+ * before come back blank. `aliases` maps a new header to older spellings.
+ */
+function readByHeader_(sheet, headers, aliases) {
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  var width = sheet.getLastColumn();
+  var head  = sheet.getRange(1, 1, 1, width).getValues()[0];
+  var body  = sheet.getRange(2, 1, sheet.getLastRow() - 1, width).getValues();
+
+  var idx = {};
+  head.forEach(function (h, i) { idx[String(h).trim()] = i; });
+
+  return body.map(function (row) {
+    return headers.map(function (h) {
+      var names = [h].concat((aliases && aliases[h]) || []);
+      for (var i = 0; i < names.length; i++) {
+        if (idx[names[i]] !== undefined) return row[idx[names[i]]];
+      }
+      return '';
+    });
+  });
+}
+
 function findRow_(sheet, key) {
   if (sheet.getLastRow() < 2) return 0;
   var keys = sheet.getRange(2, COL.KEY, sheet.getLastRow() - 1, 1).getValues();
@@ -243,9 +394,10 @@ function findRow_(sheet, key) {
   return 0;
 }
 
-function guestRow_(g, key) {
-  if (g.getLastRow() < 2) return 0;
-  var rows = g.getRange(2, 1, g.getLastRow() - 1, 2).getValues();
+/** The invitation row whose "Name & Companion" builds this key. */
+function invitationRow_(s, key) {
+  if (s.getLastRow() < 2) return 0;
+  var rows = s.getRange(2, ICOL.NAME, s.getLastRow() - 1, 2).getValues();
   for (var i = 0; i < rows.length; i++) {
     var name = String(rows[i][0]).trim();
     var comp = String(rows[i][1]).trim();
@@ -254,6 +406,16 @@ function guestRow_(g, key) {
     if (normKey_(built) === key) return i + 2;
   }
   return 0;
+}
+
+/** Column A is =ROW()-1, so the number is the row index; 0 = not on the list. */
+function invitationNo_(key) {
+  try {
+    var row = invitationRow_(sheet_(INV_SHEET), key);
+    return row ? row - 1 : '';
+  } catch (err) {
+    return '';
+  }
 }
 
 function normKey_(s) {

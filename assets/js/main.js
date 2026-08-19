@@ -384,38 +384,119 @@ document.addEventListener('keydown', e => {
 
 /* ═══════════ 7 · RSVP ═══════════ */
 
-const form     = $('#rsvp-form');
-const nameIn   = $('#f-name');
-const paxField = $('#pax-field');
-const paxSel   = $('#f-pax');
-const note     = $('#form-note');
+/* Two steps in one section:
+     attendance ─┬─ Not attend ─→ wishes ─→ SUBMIT
+                 └─ Attend ─────→ number of guests ─→ wishes ─→ NEXT
+                                  ─→ step 2: one name field per guest ─→ SUBMIT
+   There is no name field in the normal flow: the invitation name from ?to= is
+   the identity, and it is what appears on the wish. A visitor who arrives
+   without ?to= (a forwarded link, or us testing) still gets one, or they could
+   not be recorded at all. */
+
+const form      = $('#rsvp-form');
+const nameField = $('#name-field');
+const nameIn    = $('#f-name');
+const paxField  = $('#pax-field');
+const paxSel    = $('#f-pax');
+const wishField = $('#wishes-field');
+const step1     = $('#rsvp-step1');
+const step2     = $('#rsvp-step2');
+const nextBtn   = $('#rsvp-next');
+const backBtn   = $('#rsvp-back');
+const submit1   = $('#rsvp-submit');
+const submit2   = $('#rsvp-submit2');
+const guestBox  = $('#guest-fields');
+const rsvpTitle = $('#rsvp-title');
+const rsvpLede  = $('#rsvp-lede');
+const note      = $('#form-note');
 let   attending = '';
 
-if (GUEST) { nameIn.value = GUEST; nameIn.readOnly = true; }
+const LEDE_STEP1 = rsvpLede.textContent;
+const LEDE_STEP2 = 'Please write the name of everyone joining us, as you would like it to be read on the day.';
+
+if (!GUEST) nameField.hidden = false;
+const who = () => GUEST || nameIn.value.trim();
 
 for (let i = 1; i <= MAX_PAX; i++) {
   paxSel.insertAdjacentHTML('beforeend', `<option value="${i}">${i}</option>`);
 }
 paxSel.value = String(MAX_PAX);
 
+function fail (msg) {
+  note.textContent = msg;
+  note.classList.add('err');
+}
+
+function showStep (n) {
+  step1.hidden = n !== 1;
+  step2.hidden = n !== 2;
+  rsvpTitle.textContent = n === 1 ? 'WILL YOU ATTEND?' : 'WHO IS JOINING?';
+  rsvpLede.textContent  = n === 1 ? LEDE_STEP1 : LEDE_STEP2;
+  note.textContent = '';
+  note.classList.remove('err');
+  const col = $('.rsvp-inner');
+  if (col) col.scrollTop = 0;
+}
+
+/* Rebuilt whenever the count changes; anything already typed is carried over,
+   and the invitation name seeds the first fields ("A & B" → two guests). */
+function buildGuestFields (n) {
+  const typed = $$('.rsvp-guest', guestBox).map(i => i.value);
+  const seed  = (GUEST || '').split(/\s+&\s+/).map(s => s.trim()).filter(Boolean);
+  guestBox.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const val = typed[i] || seed[i] || '';
+    guestBox.insertAdjacentHTML('beforeend', `
+      <label class="field">
+        <span class="field-label">GUEST ${i + 1}</span>
+        <input type="text" class="rsvp-guest" placeholder="Full name" value="${esc(val)}">
+      </label>`);
+  }
+}
+
 $$('#f-attend .toggle-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     $$('#f-attend .toggle-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     attending = btn.dataset.value;
-    paxField.hidden = attending !== 'Attend';
+
+    const going = attending === 'Attend';
+    paxField.hidden  = !going;
+    wishField.hidden = false;
+    nextBtn.hidden   = !going;
+    submit1.hidden   = going;
+    note.textContent = '';
+    note.classList.remove('err');
   });
 });
+
+nextBtn.addEventListener('click', () => {
+  note.classList.remove('err');
+  if (!who()) { fail('Please fill in your name.'); return; }
+  buildGuestFields(Number(paxSel.value) || 1);
+  showStep(2);
+});
+
+backBtn.addEventListener('click', () => showStep(1));
 
 form.addEventListener('submit', async e => {
   e.preventDefault();
   note.classList.remove('err');
 
-  if (!nameIn.value.trim()) { note.textContent = 'Please fill in your name.'; note.classList.add('err'); return; }
-  if (!attending)           { note.textContent = 'Please choose whether you can attend.'; note.classList.add('err'); return; }
-  if (!API_URL)             { note.textContent = 'RSVP is not open yet — please check back soon.'; note.classList.add('err'); return; }
+  const going = attending === 'Attend';
 
-  const btn = $('#rsvp-submit');
+  if (!who())     { fail('Please fill in your name.'); return; }
+  if (!attending) { fail('Please choose whether you can attend.'); return; }
+  if (!API_URL)   { fail('RSVP is not open yet — please check back soon.'); return; }
+
+  let names = [];
+  if (going) {
+    names = $$('.rsvp-guest', guestBox).map(i => i.value.trim());
+    if (!names.length)          { fail('Please tell us who is joining.'); return; }
+    if (names.some(n => !n))    { fail('Please fill in every guest name.'); return; }
+  }
+
+  const btn = going ? submit2 : submit1;
   btn.disabled = true;
   note.textContent = 'Sending…';
 
@@ -426,16 +507,17 @@ form.addEventListener('submit', async e => {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action:    'rsvp',
-        key:       GUEST || nameIn.value.trim(),
-        name:      nameIn.value.trim(),
+        key:       who(),
+        name:      who(),
         attending,
-        pax:       attending === 'Attend' ? paxSel.value : 0,
+        pax:       going ? names.length : 0,
+        guests:    names,
         wishes:    $('#f-wishes').value.trim()
       })
     });
     form.innerHTML =
       '<p class="lede" style="text-align:center">Thank you — your response has been recorded.' +
-      '<br>We can\'t wait to celebrate with you.</p>';
+      '<br>We can’t wait to celebrate with you.</p>';
     setTimeout(loadWishes, 1200);
   } catch (err) {
     note.textContent = 'Something went wrong. Please try again.';

@@ -213,34 +213,47 @@
 
     <div class="rsvp-inner">
       <div class="eyebrow-rule reanimate fade delay200ms"><span>RSVP</span><i></i></div>
-      <h2 class="section-title big reanimate fade delay300ms">WILL YOU ATTEND?</h2>
-      <p class="lede reanimate fade delay400ms">We kindly request your prompt response to confirm your attendance. Alongside your RSVP, please take a moment to extend your warm regards and best wishes.</p>
+      <h2 class="section-title big reanimate fade delay300ms" id="rsvp-title">WILL YOU ATTEND?</h2>
+      <p class="lede reanimate fade delay400ms" id="rsvp-lede">We kindly request your prompt response to confirm your attendance. Alongside your RSVP, please take a moment to extend your warm regards and best wishes.</p>
 
       <form id="rsvp-form" class="rsvp-form reanimate fade delay600ms" autocomplete="off">
-        <label class="field">
-          <span class="field-label">NAME</span>
-          <input type="text" id="f-name" name="name" placeholder="Guest Name" required>
-        </label>
 
-        <div class="field">
-          <span class="field-label">ATTENDANCE</span>
-          <div class="toggle" id="f-attend">
-            <button type="button" class="toggle-btn" data-value="Attend">ATTEND</button>
-            <button type="button" class="toggle-btn" data-value="Not attend">NOT ATTEND</button>
+        <!-- step 1 · attendance, then pax, then wishes -->
+        <div class="rsvp-step" id="rsvp-step1">
+          <label class="field" id="name-field" hidden>
+            <span class="field-label">YOUR NAME</span>
+            <input type="text" id="f-name" name="name" placeholder="Guest Name">
+          </label>
+
+          <div class="field">
+            <span class="field-label">ATTENDANCE</span>
+            <div class="toggle" id="f-attend">
+              <button type="button" class="toggle-btn" data-value="Attend">ATTEND</button>
+              <button type="button" class="toggle-btn" data-value="Not attend">NOT ATTEND</button>
+            </div>
           </div>
+
+          <label class="field" id="pax-field" hidden>
+            <span class="field-label">NUMBER OF GUESTS</span>
+            <select id="f-pax" name="pax"></select>
+          </label>
+
+          <label class="field" id="wishes-field" hidden>
+            <span class="field-label">WISHES</span>
+            <textarea id="f-wishes" name="wishes" rows="3" placeholder="Write your wishes and blessings"></textarea>
+          </label>
+
+          <button type="button" class="pill pill-solid full" id="rsvp-next" hidden>NEXT</button>
+          <button type="submit" class="pill pill-solid full" id="rsvp-submit" hidden>SUBMIT</button>
         </div>
 
-        <label class="field" id="pax-field" hidden>
-          <span class="field-label">NUMBER OF GUESTS</span>
-          <select id="f-pax" name="pax"></select>
-        </label>
+        <!-- step 2 · one field per guest -->
+        <div class="rsvp-step" id="rsvp-step2" hidden>
+          <div id="guest-fields"></div>
+          <button type="submit" class="pill pill-solid full" id="rsvp-submit2">SUBMIT</button>
+          <button type="button" class="step-back" id="rsvp-back">&larr; Back</button>
+        </div>
 
-        <label class="field">
-          <span class="field-label">WISHES</span>
-          <textarea id="f-wishes" name="wishes" rows="3" placeholder="Write your wishes and blessings"></textarea>
-        </label>
-
-        <button type="submit" class="pill pill-solid full" id="rsvp-submit">SUBMIT</button>
         <p class="form-note" id="form-note" role="status"></p>
       </form>
     </div>

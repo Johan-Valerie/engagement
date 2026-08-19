@@ -31,11 +31,18 @@ scrim. The love-story page was removed at the couple's request.
 https://johangw.github.io/johan-valerie-engagement/?to=Mr.%20Budi%20%26%20Mrs.%20Sari&max=2
 ```
 
-- `to`  — greeting name on the cover; also locks the RSVP name field and becomes the sheet key
+- `to`  — greeting name on the cover; it IS the guest's identity (there is no name field in the RSVP form) and becomes the sheet key
 - `max` — caps the guest-count dropdown
 
-The `Guests` tab of the Sheet builds these links for you: type a name and a seat
-count, and the link appears in column D.
+The `Invitation` tab of the Sheet builds these links for you: type a name and a
+seat count, and the link appears in column E.
+
+## RSVP flow
+
+Attendance first. **Not attending** → wishes → submit. **Attending** → number of
+guests → wishes → **next** → one field per guest name → submit. Guests never
+type their own name: the wish is signed with the invitation name from `?to=`,
+and the names collected on the second step go to the `Guest List` tab.
 
 ## RSVP backend
 
@@ -46,11 +53,17 @@ Google Sheet **"Johan &amp; Valerie Engagement RSVP"** (its own sheet, not the w
 3. Deploy → New deployment → Web app · Execute as **Me** · Access **Anyone**
 4. Paste the `/exec` URL into `assets/js/main.js` → `const API_URL = '…'`
 
-Tabs: `RSVP` (responses, one row per guest key, `Approved` checkbox gates the
-wishes wall) · `Guests` (control panel + link factory + open tracking) ·
+Tabs: `RSVP` (responses, one row per invitation, `Approved` checkbox gates the
+wishes wall) · `Invitation` (control panel + link factory + open tracking; column
+A is the invitation number, filled by formula from the row) · `Guest List` (one
+row per confirmed person with the invitation number they belong to — written by
+the site, not by hand, and rebuilt for an invitation each time it re-submits) ·
 `Dashboard` (counts).
 
-After adding guest rows, run `refreshLinks()` to extend the formulas.
+`setup()` is safe to re-run: it migrates every tab by header name, so data
+survives a column moving, and it renames an older `Guests` tab to `Invitation`.
+
+After adding invitation rows, run `refreshLinks()` to extend the formulas.
 Editing `doGet`/`doPost` requires **Deploy → Manage deployments → New version** —
 saving alone does not update the live web app.
 
