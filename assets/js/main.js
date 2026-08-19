@@ -613,6 +613,16 @@ function showAnswered (d) {
 function showForm () {
   answered.hidden = true;
   form.hidden = false;
+
+  /* The form is a reveal target. While it was hidden its rect measured 0x0, so
+     syncReveals stripped .in-view and left it laid out but fully transparent —
+     and nothing re-measures until the next scroll, which is why the fields only
+     turned up after visiting another page and coming back. Put it back here,
+     and drop the entrance stagger so an edit opens at once rather than 600ms
+     later. */
+  form.classList.remove('delay600ms');
+  form.classList.add('in-view');
+  queueReveals();
 }
 
 editBtn.addEventListener('click', () => {
