@@ -47,6 +47,13 @@ guests → wishes → **next** → one field per guest name → submit. Guests n
 type their own name: the wish is signed with the invitation name from `?to=`,
 and the names collected on the second step go to the `Guest List` tab.
 
+Once an invitation has answered, its link opens on a **thank-you panel**
+summarising the response, with an **EDIT RESPONSE** button that reopens the form
+pre-filled. The page asks `doGet?action=status&key=…` on load to find this out,
+and an edit re-POSTs under the same key — which the Sheet upserts, so it
+corrects the existing row instead of adding a second one. Anyone who has already
+started filling the form in keeps what they typed if the lookup lands late.
+
 ## RSVP backend
 
 Google Sheet **"Johan &amp; Valerie Engagement RSVP"** (its own sheet, not the wedding one).

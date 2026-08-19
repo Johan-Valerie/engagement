@@ -567,6 +567,25 @@ a{color:inherit;text-decoration:none}
   color:rgba(255,255,255,.75);padding:2px 8px;transition:color .25s;
 }
 .step-back:hover{color:#fff}
+.rsvp-answered{margin-top:22px;animation:answered-in .45s ease both}
+@keyframes answered-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.answered-list{margin:0 0 22px}
+.answered-row{
+  display:flex;gap:14px;align-items:baseline;
+  padding:11px 0;border-bottom:1px solid rgba(255,255,255,.18);
+}
+.answered-row dt{
+  flex:none;width:112px;
+  font-weight:600;font-size:11px;letter-spacing:1.4px;
+  color:rgba(255,255,255,.7);
+}
+.answered-row dd{
+  flex:1;margin:0;font-size:14px;line-height:1.55;
+  color:#fff;overflow-wrap:anywhere;
+}
+@media (prefers-reduced-motion:reduce){
+  .rsvp-answered{animation:none}
+}
 .form-note{font-size:12.5px;margin:2px 0 0;min-height:1em;color:rgba(255,255,255,.9)}
 .form-note.err{color:#ffb4a8}
 

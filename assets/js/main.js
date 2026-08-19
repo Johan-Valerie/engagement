@@ -424,11 +424,18 @@ const submit2   = $('#rsvp-submit2');
 const guestBox  = $('#guest-fields');
 const rsvpTitle = $('#rsvp-title');
 const rsvpLede  = $('#rsvp-lede');
+const answered  = $('#rsvp-answered');
+const answerList= $('#answered-list');
+const editBtn   = $('#rsvp-edit');
 const note      = $('#form-note');
 let   attending = '';
+let   reply     = null;    // this invitation's stored answer, once we know it
+let   savedNames = [];     // guest names it was submitted with
+let   touched   = false;   // has anyone started filling the form in?
 
-const LEDE_STEP1 = rsvpLede.textContent;
-const LEDE_STEP2 = 'Please write the name of everyone joining us, as you would like it to be read on the day.';
+const TITLE_STEP1 = rsvpTitle.textContent;
+const LEDE_STEP1  = rsvpLede.textContent;
+const LEDE_STEP2  = 'Please write the name of everyone joining us, as you would like it to be read on the day.';
 
 if (!GUEST) nameField.hidden = false;
 const who = () => GUEST || nameIn.value.trim();
@@ -446,7 +453,7 @@ function fail (msg) {
 function showStep (n) {
   step1.hidden = n !== 1;
   step2.hidden = n !== 2;
-  rsvpTitle.textContent = n === 1 ? 'WILL YOU ATTEND?' : 'WHO IS JOINING?';
+  rsvpTitle.textContent = n === 1 ? TITLE_STEP1 : 'WHO IS JOINING?';
   rsvpLede.textContent  = n === 1 ? LEDE_STEP1 : LEDE_STEP2;
   note.textContent = '';
   note.classList.remove('err');
@@ -461,7 +468,10 @@ function buildGuestFields (n) {
   const seed  = (GUEST || '').split(/\s+&\s+/).map(s => s.trim()).filter(Boolean);
   guestBox.innerHTML = '';
   for (let i = 0; i < n; i++) {
-    const val = typed[i] || seed[i] || '';
+    /* A field already on screen keeps exactly what is in it, blank included —
+       only positions that did not exist yet fall back to a previous answer,
+       then to the invitation name. */
+    const val = typed[i] !== undefined ? typed[i] : (savedNames[i] || seed[i] || '');
     guestBox.insertAdjacentHTML('beforeend', `
       <label class="field">
         <span class="field-label">GUEST ${i + 1}</span>
@@ -475,6 +485,7 @@ $$('#f-attend .toggle-btn').forEach(btn => {
     $$('#f-attend .toggle-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     attending = btn.dataset.value;
+    touched = true;
 
     const going = attending === 'Attend';
     paxField.hidden  = !going;
@@ -531,9 +542,10 @@ form.addEventListener('submit', async e => {
         wishes:    $('#f-wishes').value.trim()
       })
     });
-    form.innerHTML =
-      '<p class="lede" style="text-align:center">Thank you — your response has been recorded.' +
-      '<br>We can’t wait to celebrate with you.</p>';
+    savedNames = names;
+    showAnswered({ attending, pax: going ? names.length : 0,
+                   guests: names.join(', '), wishes: $('#f-wishes').value.trim() });
+    btn.disabled = false;
     setTimeout(loadWishes, 1200);
   } catch (err) {
     note.textContent = 'Something went wrong. Please try again.';
@@ -541,6 +553,70 @@ form.addEventListener('submit', async e => {
     btn.disabled = false;
   }
 });
+
+/* ── already answered ──────────────────────────────────────────
+   The Sheet upserts on the invitation key, so an edit overwrites the same row
+   rather than adding a second one — which means "edit" is just the same form
+   again, pre-filled, and the same POST. */
+
+function answerRow (label, value) {
+  return `<div class="answered-row"><dt>${label}</dt><dd>${esc(value)}</dd></div>`;
+}
+
+function showAnswered (d) {
+  reply = d;
+  const going = d.attending === 'Attend';
+
+  form.hidden = true;
+  answered.hidden = false;
+  rsvpTitle.textContent = 'THANK YOU';
+  rsvpLede.textContent = going
+    ? 'Your response has been recorded. We can’t wait to celebrate with you.'
+    : 'Thank you for letting us know — you will be dearly missed.';
+
+  let html = answerRow('ATTENDANCE', going ? 'Attending' : 'Not attending');
+  if (going) {
+    html += answerRow('GUESTS', String(d.pax || 0));
+    if (d.guests) html += answerRow('NAMES', String(d.guests).split(',').map(n => n.trim()).join(', '));
+  }
+  if (d.wishes) html += answerRow('WISHES', d.wishes);
+  answerList.innerHTML = html;
+}
+
+function showForm () {
+  answered.hidden = true;
+  form.hidden = false;
+}
+
+editBtn.addEventListener('click', () => {
+  const d = reply || {};
+  const going = d.attending === 'Attend';
+
+  savedNames = String(d.guests || '').split(',').map(n => n.trim()).filter(Boolean);
+  const pick = $(`#f-attend [data-value="${going ? 'Attend' : 'Not attend'}"]`);
+  if (pick) pick.click();                       // reuses the show/hide logic
+  if (going) paxSel.value = String(Math.min(Math.max(Number(d.pax) || 1, 1), MAX_PAX));
+  $('#f-wishes').value = d.wishes || '';
+  guestBox.innerHTML = '';                      // rebuilt from savedNames on NEXT
+
+  showForm();
+  showStep(1);
+});
+
+/* On a return visit, ask the Sheet what this invitation already said. Anyone
+   who has started answering in the meantime keeps their half-filled form. */
+async function loadReply () {
+  if (!API_URL || !GUEST) return;
+  try {
+    const res  = await fetch(`${API_URL}?action=status&key=${encodeURIComponent(GUEST)}`);
+    const data = await res.json();
+    if (data && data.found && !touched) {
+      savedNames = String(data.guests || '').split(',').map(n => n.trim()).filter(Boolean);
+      showAnswered(data);
+    }
+  } catch (err) { /* leave the blank form in place */ }
+}
+loadReply();
 
 /* ═══════════ 8 · WISHES ═══════════ */
 
