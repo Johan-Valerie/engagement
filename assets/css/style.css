@@ -317,18 +317,36 @@ a{color:inherit;text-decoration:none}
 
 /* ═══════════════ CHROME ═══════════════ */
 
+/* The menu button is our V·J monogram in a square hairline frame — the mark's
+   own outline is a diamond, so the frame is what gives the button a square
+   silhouette and keeps it legible over a busy photo. Monogram and X are
+   stacked in one grid cell and crossfade; the X spins in from a plus. */
 .nav-toggle{
   position:fixed;top:22px;right:22px;
-  z-index:40;width:34px;height:26px;
-  display:none;flex-direction:column;justify-content:center;gap:7px;
+  z-index:40;width:38px;height:38px;
+  display:none;place-items:center;
+  border:1px solid rgba(255,255,255,.5);
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
 }
-.nav-toggle.show{display:flex}
-.nav-toggle span{
-  display:block;height:1.6px;background:#fff;border-radius:2px;
-  transition:transform .35s,opacity .25s;
+.nav-toggle.show{display:grid}
+.nav-toggle > *{grid-area:1/1}
+.nav-mono{
+  width:25px;height:25px;object-fit:contain;display:block;
+  transition:opacity .3s,transform .35s;
 }
-.nav-toggle.open span:first-child{transform:translateY(4.3px) rotate(45deg)}
-.nav-toggle.open span:last-child{transform:translateY(-4.3px) rotate(-45deg)}
+.nav-x{
+  width:15px;height:15px;position:relative;
+  opacity:0;transform:rotate(0);
+  transition:opacity .3s,transform .35s;
+}
+.nav-x i{
+  position:absolute;left:0;top:50%;margin-top:-.8px;
+  width:100%;height:1.6px;background:#fff;border-radius:2px;
+}
+.nav-x i:last-child{transform:rotate(90deg)}
+.nav-toggle.open .nav-mono{opacity:0;transform:rotate(45deg) scale(.72)}
+.nav-toggle.open .nav-x{opacity:1;transform:rotate(45deg)}
 
 .nav-menu{
   position:fixed;inset:0;z-index:35;
