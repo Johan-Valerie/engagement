@@ -462,8 +462,15 @@ a{color:inherit;text-decoration:none}
    twice — the display face with this script repeat ghosted behind it. */
 .name-script{
   font-family:var(--script);font-size:clamp(58px,18vw,96px);
-  color:var(--ink);margin:0;line-height:1.15;white-space:nowrap;
+  color:var(--ink);margin:0;line-height:1.22;white-space:nowrap;
 }
+/* Pinyon Script's capital J carries a swash that reaches back 0.27em past
+   the text origin (measured: 19px at 70px) and a tail 0.37em below the
+   baseline — where "Valerie" has none. Left flush with the 24px margin the
+   swash sat 5px off the screen edge and read as cut off. Indenting by the
+   overhang puts the J's ink on the margin, optically aligned with the
+   label and the full name above and below it. */
+#groom .name-script{text-indent:.27em}
 .fullname{
   font-weight:600;font-size:16px;margin:17px 0 0;position:relative;
 }
