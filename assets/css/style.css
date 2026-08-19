@@ -445,12 +445,11 @@ a{color:inherit;text-decoration:none}
 
 .person-inner{max-width:560px;width:100%}
 .person-name{position:relative}
-/* the script repeat is a watermark BEHIND the name — at top:52% it hung
-   below the name instead and ran straight through the full name line */
-.name-echo{
-  position:absolute;left:8px;top:50%;transform:translateY(-50%);
-  font-family:var(--script);font-size:clamp(56px,17vw,92px);
-  color:var(--ghost-25);margin:0;line-height:1;pointer-events:none;white-space:nowrap;
+/* One name only, in the script face, at full strength. It used to be set
+   twice — the display face with this script repeat ghosted behind it. */
+.name-script{
+  font-family:var(--script);font-size:clamp(58px,18vw,96px);
+  color:var(--ink);margin:0;line-height:1.15;white-space:nowrap;
 }
 .fullname{
   font-weight:600;font-size:16px;margin:17px 0 0;position:relative;
