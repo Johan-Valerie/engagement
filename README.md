@@ -47,6 +47,13 @@ guests → wishes → **next** → one field per guest name → submit. Guests n
 type their own name: the wish is signed with the invitation name from `?to=`,
 and the names collected on the second step go to the `Guest List` tab.
 
+Submitting does **not** wait for the backend to reply. The request goes out with
+`mode: 'no-cors'`, so its response is opaque — there is no status or body to
+read, and Apps Script takes 3–10s to answer even a read-only request. The page
+waits only long enough for an outright network failure to surface (~1.2s), then
+confirms; `keepalive` lets the request finish even if the page is closed, and a
+later failure is reported on the panel.
+
 Once an invitation has answered, its link opens on a **thank-you panel**
 summarising the response, with an **EDIT RESPONSE** button that reopens the form
 pre-filled. The page asks `doGet?action=status&key=…` on load to find this out,

@@ -425,6 +425,7 @@ const guestBox  = $('#guest-fields');
 const rsvpTitle = $('#rsvp-title');
 const rsvpLede  = $('#rsvp-lede');
 const answered  = $('#rsvp-answered');
+const answeredNote = $('#answered-note');
 const answerList= $('#answered-list');
 const editBtn   = $('#rsvp-edit');
 const note      = $('#form-note');
@@ -528,9 +529,13 @@ form.addEventListener('submit', async e => {
   note.textContent = 'Sending…';
 
   try {
-    await fetch(API_URL, {
+    /* keepalive lets the request finish even if the page is closed a moment
+       later — the confirmation no longer waits for it, so it has to survive
+       on its own. */
+    const sent = fetch(API_URL, {
       method: 'POST',
       mode: 'no-cors',
+      keepalive: true,
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action:    'rsvp',
@@ -542,6 +547,26 @@ form.addEventListener('submit', async e => {
         wishes:    $('#f-wishes').value.trim()
       })
     });
+
+    /* The reply is opaque — mode:'no-cors' means we cannot read a status, a
+       body, or anything else from it, so waiting the full round trip tells us
+       nothing beyond "it left the device". Apps Script takes 3-10s to answer
+       even a read-only request, and that whole wait was being spent in front of
+       the guest. Wait only long enough for an outright network failure to
+       surface, then confirm. */
+    let offline = false;
+    await Promise.race([
+      sent.catch(() => { offline = true; }),
+      new Promise(r => setTimeout(r, 1200))
+    ]);
+    if (offline) throw new Error('unreachable');
+
+    /* Still watch it: if it fails after we have said thank you, say so. */
+    sent.catch(() => {
+      answeredNote.textContent = 'We could not reach the server — please open this link again later and check your response was saved.';
+      answeredNote.classList.add('err');
+    });
+
     savedNames = names;
     showAnswered({ attending, pax: going ? names.length : 0,
                    guests: names.join(', '), wishes: $('#f-wishes').value.trim() });
@@ -565,6 +590,8 @@ function answerRow (label, value) {
 
 function showAnswered (d) {
   reply = d;
+  answeredNote.textContent = '';
+  answeredNote.classList.remove('err');
   const going = d.attending === 'Attend';
 
   form.hidden = true;

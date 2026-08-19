@@ -301,7 +301,10 @@ function handleRsvp_(p) {
     ? p.guests.map(function (n) { return clean_(n, 120); }).filter(String)
     : [];
 
-  var invNo = invitationNo_(key);
+  /* One pass over the Invitation tab: it finds the row, writes that row's
+     Status and Pax, and hands back its number. Previously the number came from
+     one scan and the status from a full-sheet sweep afterwards. */
+  var invNo = setInvitationAnswer_(key, going, Number(p.pax) || 0);
 
   var sheet = sheet_(RSVP_SHEET);
   var row   = findRow_(sheet, key);
@@ -326,7 +329,6 @@ function handleRsvp_(p) {
   }
 
   syncGuestList_(invNo, name, going === 'Attend' ? names : []);
-  try { syncInvitationStatus_(); } catch (err) { /* the response is already saved */ }
   return json_({ ok: true });
 }
 
@@ -339,22 +341,25 @@ function handleRsvp_(p) {
 function syncGuestList_(invNo, invName, names) {
   var s = sheet_(GLIST_SHEET);
   var last = s.getLastRow();
+  var keep = [];
 
   if (last > 1) {
-    var rows = s.getRange(2, 1, last - 1, GLHEADERS.length).getValues();
-    for (var i = rows.length - 1; i >= 0; i--) {
-      var mineByNo   = invNo && String(rows[i][GLCOL.INVNO - 1]) === String(invNo);
-      var mineByName = normKey_(rows[i][GLCOL.INVNAME - 1]) === normKey_(invName);
-      if (mineByNo || mineByName) s.deleteRow(i + 2);
-    }
+    s.getRange(2, 1, last - 1, GLHEADERS.length).getValues().forEach(function (r) {
+      if (!String(r[GLCOL.GUEST - 1]).trim()) return;
+      var mineByNo   = invNo !== '' && String(r[GLCOL.INVNO - 1]) === String(invNo);
+      var mineByName = normKey_(r[GLCOL.INVNAME - 1]) === normKey_(invName);
+      if (!mineByNo && !mineByName) keep.push(r);
+    });
   }
 
-  if (names.length) {
-    var now = wib_(new Date());
-    var out = names.map(function (n) { return ['', n, invNo || '', invName, now]; });
-    s.getRange(s.getLastRow() + 1, 1, out.length, GLHEADERS.length).setValues(out);
-  }
-  renumberGuestList_(s);
+  var now = wib_(new Date());
+  names.forEach(function (n) { keep.push(['', n, invNo, invName, now]); });
+  keep.forEach(function (r, i) { r[GLCOL.NO - 1] = i + 1; });
+
+  /* One clearContent plus one setValues. Deleting a row at a time was a
+     separate structural change to the sheet for every name that moved. */
+  if (last > 1) s.getRange(2, 1, last - 1, GLHEADERS.length).clearContent();
+  if (keep.length) s.getRange(2, 1, keep.length, GLHEADERS.length).setValues(keep);
 }
 
 function renumberGuestList_(s) {
@@ -373,16 +378,21 @@ function handleOpen_(p) {
   var row = invitationRow_(s, key);
   if (!row) return json_({ ok: false });
 
-  var now = wib_(new Date());
-  if (!String(s.getRange(row, ICOL.FIRST).getValue()).trim()) {
-    s.getRange(row, ICOL.FIRST).setValue(now);
-  }
-  s.getRange(row, ICOL.LAST).setValue(now);
-  s.getRange(row, ICOL.OPENS).setValue((Number(s.getRange(row, ICOL.OPENS).getValue()) || 0) + 1);
+  /* Status..Opens is one contiguous block, so the whole update is a single
+     read and a single write. */
+  var span = ICOL.OPENS - ICOL.STATUS + 1;
+  var v    = s.getRange(row, ICOL.STATUS, 1, span).getValues()[0];
+  var i    = function (col) { return col - ICOL.STATUS; };
 
-  var cell = s.getRange(row, ICOL.STATUS);
-  var now_ = String(cell.getValue()).trim();
-  if (!now_ || now_ === 'Not opened') cell.setValue('Opened');
+  var now = wib_(new Date());
+  if (!String(v[i(ICOL.FIRST)]).trim()) v[i(ICOL.FIRST)] = now;
+  v[i(ICOL.LAST)]  = now;
+  v[i(ICOL.OPENS)] = (Number(v[i(ICOL.OPENS)]) || 0) + 1;
+
+  var state = String(v[i(ICOL.STATUS)]).trim();
+  if (!state || state === 'Not opened') v[i(ICOL.STATUS)] = 'Opened';
+
+  s.getRange(row, ICOL.STATUS, 1, span).setValues([v]);
   return json_({ ok: true });
 }
 
@@ -483,13 +493,21 @@ function invitationRow_(s, key) {
   return 0;
 }
 
-/** Column A is =ROW()-1, so the number is the row index; 0 = not on the list. */
-function invitationNo_(key) {
+/**
+ * Writes this invitation's answer into its own row and returns its number.
+ * Column A is =ROW()-1, so the number is just the row index. Returns '' when
+ * the key is not on the Invitation tab — someone who opened the site without a
+ * personal link still gets an RSVP row, they simply have no invitation number.
+ */
+function setInvitationAnswer_(key, attending, pax) {
   try {
-    var row = invitationRow_(sheet_(INV_SHEET), key);
-    return row ? row - 1 : '';
+    var s = sheet_(INV_SHEET);
+    var row = invitationRow_(s, key);
+    if (!row) return '';
+    s.getRange(row, ICOL.STATUS, 1, 2).setValues([[attending, pax]]);
+    return row - 1;
   } catch (err) {
-    return '';
+    return '';                    // never lose the response over a bookkeeping write
   }
 }
 

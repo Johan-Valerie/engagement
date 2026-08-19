@@ -637,12 +637,14 @@ a{color:inherit;text-decoration:none}
   display:flex;align-items:center;gap:14px;
   padding:13px 0;text-align:left;opacity:0;transition:opacity .5s ease-in-out;
 }
+/* The logo is white-on-blue and very wide (3.2:1), so the tile carries BCA's
+   own blue and the mark sits across it, rather than being letterboxed inside a
+   white square where it would shrink to nothing. */
 .gift-bank{
-  flex:none;width:46px;height:32px;border-radius:6px;background:#fff;
+  flex:none;width:56px;height:34px;border-radius:6px;background:#185bab;
   display:grid;place-items:center;
-  font-family:var(--display);font-weight:700;font-size:12.5px;
-  letter-spacing:.3px;color:#0060af;
 }
+.gift-bank img{width:44px;height:auto;display:block}
 .gift-account-info{flex:1;min-width:0}
 .gift-account-name{font-weight:600;font-size:13px;color:#fff}
 .gift-account-number{font-size:13px;letter-spacing:.9px;color:rgba(255,255,255,.82)}
