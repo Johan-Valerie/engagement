@@ -18,7 +18,10 @@
  * THE THREE TABS
  *   Invitation — one row per invitation (what used to be "Guests"). Column A
  *                is the invitation number, filled by formula from the row, so
- *                it is stable and never needs typing.
+ *                it is stable and never needs typing. Ticking "Tea Pai" adds
+ *                &teapai=1 to that row's link, and the site shows the Tea Pai
+ *                card only when the link carries it — so the tick has to
+ *                happen BEFORE that link goes out.
  *   Guest List — one row per confirmed person, carrying the invitation number
  *                they belong to. Written by the site, not by hand: it is
  *                rebuilt for an invitation every time that invitation
@@ -47,9 +50,11 @@ var HEADERS = ['Timestamp','Guest link (key)','Invitation name','Invitation no.'
                'Attending','Pax','Guest names','Wishes','Approved'];
 
 /* Invitation columns (1-based) */
-var ICOL = { NO:1, NAME:2, COMPANION:3, SEATS:4, LINK:5, STATUS:6, PAX:7, FIRST:8, LAST:9, OPENS:10 };
-var IHEADERS = ['Invitation no.','Guest name','Companion name','Max seats','Personalized link',
-                'Status','Pax confirmed','First opened (WIB)','Last opened (WIB)','Opens'];
+var ICOL = { NO:1, NAME:2, COMPANION:3, SEATS:4, TEAPAI:5, LINK:6, STATUS:7, PAX:8,
+             FIRST:9, LAST:10, OPENS:11 };
+var IHEADERS = ['Invitation no.','Guest name','Companion name','Max seats','Tea Pai',
+                'Personalized link','Status','Pax confirmed',
+                'First opened (WIB)','Last opened (WIB)','Opens'];
 
 /* Guest List columns (1-based) */
 var GLCOL = { NO:1, GUEST:2, INVNO:3, INVNAME:4, WHEN:5 };
@@ -68,8 +73,10 @@ function setup() {
 
   SpreadsheetApp.getUi().alert(
     'Setup complete.\n\n' +
-    'Tabs: Invitation (was "Guests", now with an invitation number), ' +
-    'Guest List (filled in by the site), RSVP, Dashboard.\n\n' +
+    'Tabs: Invitation (was "Guests", now with an invitation number and a ' +
+    'Tea Pai tickbox), Guest List (filled in by the site), RSVP, Dashboard.\n\n' +
+    'Tea Pai starts off for every row. Tick the rows that are invited, then ' +
+    'run refreshLinks() so their links pick it up.\n\n' +
     'Now Deploy → Manage deployments → edit → New version, so the live web app ' +
     'picks this up.');
 }
@@ -117,16 +124,19 @@ function setupInvitation_(ss) {
   s.setColumnWidth(ICOL.NO, 110);
   s.setColumnWidth(ICOL.NAME, 210);
   s.setColumnWidth(ICOL.COMPANION, 180);
-  s.setColumnWidth(ICOL.LINK, 420);
+  s.setColumnWidth(ICOL.TEAPAI, 80);
+  s.setColumnWidth(ICOL.LINK, 460);
 
   // Rows with no guest name are noise from a previous layout.
   kept = kept.filter(function (r) { return String(r[ICOL.NAME - 1]).trim() !== ''; });
   if (kept.length) {
     var out = kept.map(function (r) {
       return ['', r[ICOL.NAME - 1], r[ICOL.COMPANION - 1], r[ICOL.SEATS - 1] || 2,
-              '', '', '', r[ICOL.FIRST - 1], r[ICOL.LAST - 1], r[ICOL.OPENS - 1]];
+              r[ICOL.TEAPAI - 1] === true, '', '', '',
+              r[ICOL.FIRST - 1], r[ICOL.LAST - 1], r[ICOL.OPENS - 1]];
     });
     s.getRange(2, 1, out.length, IHEADERS.length).setValues(out);
+    s.getRange(2, ICOL.TEAPAI, out.length, 1).insertCheckboxes();
   }
   writeInvitationFormulas_(s);
 }
@@ -159,13 +169,14 @@ function setupDashboard_(ss) {
    .setFontWeight('bold').setFontSize(14);
   var rows = [
     ['Invitations sent',     '=COUNTA(Invitation!B2:B)'],
-    ['Links opened',         '=COUNTIF(Invitation!H2:H,"<>")'],
+    ['Links opened',         '=COUNTIF(Invitation!I2:I,"<>")'],
     ['Responded',            '=COUNTA(RSVP!B2:B)'],
     ['Attending',            '=COUNTIF(RSVP!E2:E,"Attend")'],
     ['Not attending',        '=COUNTIF(RSVP!E2:E,"Not attend")'],
     ['Total pax confirmed',  '=SUM(RSVP!F2:F)'],
     ['Names on guest list',  "=COUNTA('Guest List'!B2:B)"],
     ['Seats allocated',      '=SUM(Invitation!D2:D)'],
+    ['Invited to Tea Pai',   '=COUNTIF(Invitation!E2:E,TRUE)'],
     ['Wishes awaiting approval',
      '=COUNTIFS(RSVP!H2:H,"<>",RSVP!I2:I,FALSE)']
   ];
@@ -186,10 +197,11 @@ function writeInvitationFormulas_(s) {
 
   var key    = 'TRIM(B{r}) & IF(TRIM(C{r})="", "", " & " & TRIM(C{r}))';
   var no     = '=IF(B{r}="","",ROW()-1)';
-  var link   = '=IF(B{r}="","", "' + SITE_URL + '?to=" & ENCODEURL(' + key + ') & "&max=" & IF(D{r}="",2,D{r}))';
+  var link   = '=IF(B{r}="","", "' + SITE_URL + '?to=" & ENCODEURL(' + key + ') & "&max=" & IF(D{r}="",2,D{r})' +
+                 ' & IF(E{r}=TRUE, "&teapai=1", ""))';
   var status = '=IF(B{r}="","",' +
                  'IFERROR(INDEX(RSVP!$E:$E, MATCH(' + key + ', RSVP!$B:$B, 0)),' +
-                   'IF(H{r}="", "Not opened", "Opened")))';
+                   'IF(I{r}="", "Not opened", "Opened")))';
   var pax    = '=IF(B{r}="","", IFERROR(INDEX(RSVP!$F:$F, MATCH(' + key + ', RSVP!$B:$B, 0)), ""))';
 
   var N = [], L = [], S = [], P = [];

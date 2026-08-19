@@ -33,9 +33,12 @@ https://johangw.github.io/johan-valerie-engagement/?to=Mr.%20Budi%20%26%20Mrs.%2
 
 - `to`  — greeting name on the cover; it IS the guest's identity (there is no name field in the RSVP form) and becomes the sheet key
 - `max` — caps the guest-count dropdown
+- `teapai=1` — shows the Tea Pai card. Absent means the guest sees only the
+  Reception, so the tick has to be made in the Sheet before the link is sent
 
 The `Invitation` tab of the Sheet builds these links for you: type a name and a
-seat count, and the link appears in column E.
+seat count, tick `Tea Pai` if they are invited to it, and the link appears in
+column F.
 
 ## RSVP flow
 
@@ -62,6 +65,10 @@ the site, not by hand, and rebuilt for an invitation each time it re-submits) ·
 
 `setup()` is safe to re-run: it migrates every tab by header name, so data
 survives a column moving, and it renames an older `Guests` tab to `Invitation`.
+
+The `Tea Pai` tickbox in column E is per invitation: ticking it appends
+`&teapai=1` to that row's link, and the site drops the Tea Pai card from the
+event page for anyone whose link does not carry it.
 
 After adding invitation rows, run `refreshLinks()` to extend the formulas.
 Editing `doGet`/`doPost` requires **Deploy → Manage deployments → New version** —

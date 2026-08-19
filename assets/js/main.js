@@ -11,6 +11,9 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const params    = new URLSearchParams(location.search);
 const GUEST     = (params.get('to') || '').trim();
 const MAX_PAX   = Math.max(1, parseInt(params.get('max'), 10) || 2);
+/* Tea Pai is invitation-by-invitation: the Sheet only appends &teapai=1 to
+   the link when that row is ticked, so the card is hidden unless asked for. */
+const TEA_PAI   = params.get('teapai') === '1';
 
 /* ═══════════ 1 · INTRO / PRELOADER ═══════════ */
 
@@ -382,6 +385,19 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') stepLightbox(1);
 });
 
+/* ═══════════ 6b · TEA PAI ═══════════ */
+
+if (!TEA_PAI) {
+  const card = $('#teapai-card');
+  const rule = $('#teapai-divider');
+  if (card) card.remove();
+  if (rule) rule.remove();
+  /* Reception is then the only card on the page, so it should not wait its
+     turn behind two reveals that no longer exist. */
+  const reception = $('#reception-card');
+  if (reception) reception.classList.replace('delay600ms', 'delay200ms');
+}
+
 /* ═══════════ 7 · RSVP ═══════════ */
 
 /* Two steps in one section:
@@ -597,4 +613,41 @@ function trackOpen () {
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({ action: 'open', key: GUEST })
   }).catch(() => {});
+}
+
+/* ═══════════ 10 · WEDDING GIFT ═══════════ */
+
+const giftBox = $('#gift-container');
+
+if (giftBox) {
+  const toggleGift = () => giftBox.classList.toggle('active');
+  $('#gift-open').addEventListener('click', toggleGift);
+  $('#gift-close').addEventListener('click', toggleGift);
+
+  /* navigator.clipboard needs a secure context; the fallback keeps the button
+     working anywhere else, including older iOS. */
+  function copyText (text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:absolute;left:-9999px;opacity:0';
+    document.body.append(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    try { document.execCommand('copy'); } finally { ta.remove(); }
+    return Promise.resolve();
+  }
+
+  $$('.gift-copy-btn').forEach(btn => {
+    let revert;
+    btn.addEventListener('click', async () => {
+      try { await copyText(btn.dataset.copy); } catch (err) { /* nothing to show */ }
+      btn.classList.add('copied');
+      clearTimeout(revert);
+      revert = setTimeout(() => btn.classList.remove('copied'), 1600);
+    });
+  });
 }

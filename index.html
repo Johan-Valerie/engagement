@@ -89,6 +89,7 @@
     <li><a href="#events">Event Details</a></li>
     <li><a href="#dresscode">Dress Code</a></li>
     <li><a href="#rsvp">RSVP &amp; Wishes</a></li>
+    <li><a href="#gift">Wedding Gift</a></li>
     <li><a href="#gallery">Gallery</a></li>
   </ul>
   <p class="nav-hint">Select one of the menus above to navigate.</p>
@@ -159,7 +160,7 @@
       <div class="bg-scrim scrim-heavy"></div>
 
     <div class="events-inner">
-      <article class="event-card reanimate fade delay200ms">
+      <article class="event-card reanimate fade delay200ms" id="teapai-card">
         <h2 class="card-title">TEA PAI</h2>
         <div class="card-grid">
           <div class="card-side"><i class="rule"></i><span>SATURDAY</span><i class="rule"></i></div>
@@ -171,9 +172,9 @@
         <a class="pill pill-ghost" href="https://www.google.com/maps/search/?api=1&amp;query=The+St.+Regis+Jakarta" target="_blank" rel="noopener">GOOGLE MAPS</a>
       </article>
 
-      <div class="event-divider reanimate fade delay400ms"></div>
+      <div class="event-divider reanimate fade delay400ms" id="teapai-divider"></div>
 
-      <article class="event-card reanimate fade delay600ms">
+      <article class="event-card reanimate fade delay600ms" id="reception-card">
         <h2 class="card-title">RECEPTION</h2>
         <div class="card-grid">
           <div class="card-side"><i class="rule"></i><span>SATURDAY</span><i class="rule"></i></div>
@@ -270,6 +271,44 @@
         <button type="button" id="w-prev">&larr; Prev</button>
         <span id="w-count">1 / 1</span>
         <button type="button" id="w-next">Next &rarr;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── PAGE 9 · WEDDING GIFT ─── -->
+  <section id="gift" class="snap-section gift">
+      <div class="bg-scrim scrim-heavy"></div>
+
+    <div class="gift-inner">
+      <div class="eyebrow-rule reanimate fade delay200ms"><span>WEDDING GIFT</span><i></i></div>
+      <h2 class="section-title big reanimate fade delay300ms">A TOKEN OF LOVE</h2>
+      <p class="lede reanimate fade delay400ms">The greatest gift is having you with us. If you would like to give a token of love, we would be truly grateful.</p>
+
+      <div class="gift-container reanimate fade delay600ms" id="gift-container">
+        <button type="button" class="gift-toggle gift-open" id="gift-open">SEND GIFT</button>
+        <button type="button" class="gift-toggle gift-close" id="gift-close">CLOSE</button>
+
+        <div class="gift-wrapper">
+          <div class="gift-content">
+          <div class="gift-item">
+            <span class="gift-bank">BCA</span>
+            <div class="gift-account-info">
+              <div class="gift-account-name">Johan Ganda Wijaya</div>
+              <div class="gift-account-number">2000373781</div>
+            </div>
+            <button type="button" class="gift-copy-btn" data-copy="2000373781" aria-label="Copy account number"><svg class="ico-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg><svg class="ico-check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+          </div>
+            <div class="gift-divider"></div>
+          <div class="gift-item">
+            <span class="gift-bank">BCA</span>
+            <div class="gift-account-info">
+              <div class="gift-account-name">Emanuella Valerie Didy</div>
+              <div class="gift-account-number">1160411127</div>
+            </div>
+            <button type="button" class="gift-copy-btn" data-copy="1160411127" aria-label="Copy account number"><svg class="ico-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg><svg class="ico-check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg></button>
+          </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>

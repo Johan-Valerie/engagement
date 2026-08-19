@@ -389,11 +389,12 @@ a{color:inherit;text-decoration:none}
 /* The wedding's guard for pages taller than one small screen (its
    #info/#details .content pattern): the inner column scrolls inside the
    fixed-height section. Invisible whenever everything fits. */
-.events-inner,.dc-inner,.rsvp-inner,.wishes-inner{
+.events-inner,.dc-inner,.rsvp-inner,.wishes-inner,.gift-inner{
   max-height:100%;overflow-y:auto;scrollbar-width:none;
 }
 .events-inner::-webkit-scrollbar,.dc-inner::-webkit-scrollbar,
-.rsvp-inner::-webkit-scrollbar,.wishes-inner::-webkit-scrollbar{display:none}
+.rsvp-inner::-webkit-scrollbar,.wishes-inner::-webkit-scrollbar,
+.gift-inner::-webkit-scrollbar{display:none}
 
 /* ─── reveal system, ported from the reference ───────────────────
    Elements carry .reanimate plus a direction (.fade / .up / .left /
@@ -569,6 +570,90 @@ a{color:inherit;text-decoration:none}
 .form-note{font-size:12.5px;margin:2px 0 0;min-height:1em;color:rgba(255,255,255,.9)}
 .form-note.err{color:#ffb4a8}
 
+/* ─── Page 9 · wedding gift ───────────────────────────────────
+   Ported from the reference template's gift block: a narrow outlined
+   pill that, on tap, widens to a frosted panel and reveals the accounts.
+   The reveal is a 0fr→1fr grid row rather than a height animation, which
+   is what lets it ease open without knowing the content height, and the
+   rows fade in on a stagger once the panel has finished widening. */
+.gift{justify-content:center;align-items:center;text-align:center}
+.gift-inner{width:100%;max-width:520px;margin:0 auto}
+
+.gift-container{
+  position:relative;width:152px;margin:26px auto 0;
+  border:1px solid rgba(241,193,147,.9);border-radius:24px;overflow:hidden;
+  transition:width .65s ease-in-out .4s,background .5s ease-in-out,
+             border-color .5s ease-in-out,box-shadow .5s ease-in-out;
+}
+.gift-container.active{
+  width:100%;
+  background:rgba(0,0,0,.28);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-color:rgba(222,222,222,.18);
+  box-shadow:0 8px 32px rgba(0,0,0,.2);
+  transition:width .5s ease-in-out,background .5s ease-in-out,
+             border-color .5s ease-in-out,box-shadow .5s ease-in-out;
+}
+.gift-toggle{
+  display:block;width:100%;padding:13px 24px;
+  font-family:var(--display);font-weight:600;
+  font-size:12px;letter-spacing:.9px;color:#f1c193;
+  transition:opacity .6s ease;
+}
+.gift-close{position:absolute;top:0;left:0;opacity:0;pointer-events:none}
+.gift-container.active .gift-open{opacity:0;pointer-events:none}
+.gift-container.active .gift-close{opacity:1;pointer-events:auto}
+
+.gift-wrapper{
+  display:grid;grid-template-rows:0fr;padding:0 18px;
+  transition:grid-template-rows .5s ease-in,padding .5s ease-in;
+}
+.gift-content{overflow:hidden;min-height:0}
+.gift-container.active .gift-wrapper{
+  grid-template-rows:1fr;padding:0 18px 14px;
+  transition:grid-template-rows .65s ease-in-out .4s,padding .65s ease-in-out .4s;
+}
+
+.gift-item{
+  display:flex;align-items:center;gap:14px;
+  padding:13px 0;text-align:left;opacity:0;transition:opacity .5s ease-in-out;
+}
+.gift-bank{
+  flex:none;width:46px;height:32px;border-radius:6px;background:#fff;
+  display:grid;place-items:center;
+  font-family:var(--display);font-weight:700;font-size:12.5px;
+  letter-spacing:.3px;color:#0060af;
+}
+.gift-account-info{flex:1;min-width:0}
+.gift-account-name{font-weight:600;font-size:13px;color:#fff}
+.gift-account-number{font-size:13px;letter-spacing:.9px;color:rgba(255,255,255,.82)}
+.gift-copy-btn{
+  flex:none;width:32px;height:32px;border-radius:8px;
+  display:grid;place-items:center;background:rgba(255,255,255,.125);
+  transition:background .4s;
+}
+.gift-copy-btn:hover{background:rgba(255,255,255,.32)}
+.gift-copy-btn > *{grid-area:1/1}
+.gift-copy-btn svg{
+  width:15px;height:15px;fill:none;stroke:#fff;
+  stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;
+  transition:opacity .2s;
+}
+.gift-copy-btn .ico-check{opacity:0}
+.gift-copy-btn.copied{background:rgba(255,255,255,.32)}
+.gift-copy-btn.copied .ico-copy{opacity:0}
+.gift-copy-btn.copied .ico-check{opacity:1}
+
+.gift-divider{height:1px;background:#fff;opacity:0;transition:opacity .5s ease-in-out}
+.gift-container.active .gift-item,
+.gift-container.active .gift-divider{opacity:1}
+.gift-container.active .gift-divider{opacity:.2}
+.gift-container.active .gift-content > :nth-child(1){transition-delay:.65s}
+.gift-container.active .gift-content > :nth-child(2){transition-delay:.75s}
+.gift-container.active .gift-content > :nth-child(3){transition-delay:.85s}
+.gift-container.active .gift-content > :nth-child(4){transition-delay:.95s}
+.gift-container.active .gift-content > :nth-child(5){transition-delay:1.05s}
+
 /* ─── Page 8 · wishes ─── */
 .wishes{justify-content:center}
 .wishes-inner{width:100%;max-width:520px;margin:0 auto}
@@ -661,7 +746,7 @@ a{color:inherit;text-decoration:none}
 
 @media (min-width:768px){
   .snap-section{padding-left:60px;padding-right:60px}
-  .person-inner,.rsvp-inner,.wishes-inner{max-width:640px}
+  .person-inner,.rsvp-inner,.wishes-inner,.gift-inner{max-width:640px}
   .events-inner{max-width:640px}
   .marquee img{height:212px}
   .gallery-title{padding:0 60px}
