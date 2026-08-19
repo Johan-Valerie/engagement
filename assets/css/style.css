@@ -7,6 +7,19 @@
    The vendor ships it as its own family at weight class 400, so it is
    remapped to CSS 700 here: asking for 700 gets the real bold outlines,
    never a synthetic smear. */
+/* Pinyon Script — self-hosted rather than pulled from Google. The bride
+   and groom names are set in it, and a device that failed to fetch it
+   from fonts.gstatic.com fell back to whatever "cursive" means locally
+   (Snell Roundhand on iOS), which is a different hand altogether. Serving
+   it ourselves makes the two pages render the same everywhere. */
+@font-face{
+  font-family:"Pinyon Script";
+  src:url("../fonts/PinyonScript.woff2") format("woff2");
+  font-weight:400;
+  font-style:normal;
+  font-display:swap;
+}
+
 @font-face{
   font-family:"Milton One";
   src:url("../fonts/MiltonOneBold.woff2") format("woff2"),
