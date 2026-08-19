@@ -19,7 +19,7 @@ google-apps-script/Code.gs      RSVP backend (paste into the Sheet)
 ```
 
 Screen order: **Intro → Cover → Hero → Bride → Groom → Events →
-Dress Code → RSVP → Wishes → Gallery → Closing.**
+Dress Code → RSVP → Wedding Gift → Wishes → Gallery → Closing.**
 
 One `<video>` runs fixed behind every page (`#bg-video`); bride, groom and
 closing cover it with their own photos, everything else shows it through a

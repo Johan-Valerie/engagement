@@ -435,7 +435,7 @@ let   savedNames = [];     // guest names it was submitted with
 let   touched   = false;   // has anyone started filling the form in?
 
 const TITLE_STEP1 = rsvpTitle.textContent;
-const LEDE_STEP1  = rsvpLede.textContent;
+const LEDE_STEP1  = rsvpLede.innerHTML;      // carries the bold RSVP-by date
 const LEDE_STEP2  = 'Please write the name of everyone joining us, as you would like it to be read on the day.';
 
 if (!GUEST) nameField.hidden = false;
@@ -455,7 +455,7 @@ function showStep (n) {
   step1.hidden = n !== 1;
   step2.hidden = n !== 2;
   rsvpTitle.textContent = n === 1 ? TITLE_STEP1 : 'WHO IS JOINING?';
-  rsvpLede.textContent  = n === 1 ? LEDE_STEP1 : LEDE_STEP2;
+  rsvpLede.innerHTML    = n === 1 ? LEDE_STEP1 : LEDE_STEP2;
   note.textContent = '';
   note.classList.remove('err');
   const col = $('.rsvp-inner');

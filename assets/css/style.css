@@ -151,6 +151,9 @@ a{color:inherit;text-decoration:none}
   font-size:14px;line-height:1.65;color:rgba(255,255,255,.88);
   margin:14px 0 0;max-width:46ch;
 }
+/* body sits at weight 300, and the UA's `bolder` only lifts that to 400 —
+   not enough to read as emphasis. */
+.lede strong{font-weight:600;color:#fff}
 .hair-rule{height:1px;background:var(--hair);width:100%;margin:16px 0}
 .hair-rule.wide{max-width:220px;margin:14px auto}
 
