@@ -33,6 +33,12 @@
  * built by an earlier version of this file keeps its data even though the
  * columns have moved — and it renames an existing "Guests" tab rather than
  * leaving a stale duplicate behind.
+ *
+ * IF Status / Pax confirmed LOOK EMPTY: run refreshLinks(). It re-reads every
+ * RSVP row and rewrites both columns, so anything that was blank fills in.
+ * If they are STILL blank afterwards, the response never reached this code —
+ * check that Deploy → Manage deployments → edit → New version was done, since
+ * an older live deployment writes the RSVP row with different columns.
  */
 
 var RSVP_SHEET  = 'RSVP';
@@ -84,7 +90,7 @@ function setup() {
 /** RSVP keeps its rows: they are re-read by header name and re-laid-out. */
 function setupRsvp_(ss) {
   var s = ss.getSheetByName(RSVP_SHEET);
-  var kept = readByHeader_(s, HEADERS);
+  var kept = readByHeader_(s, HEADERS, { 'Invitation name': ['Name'] });
 
   if (!s) s = ss.insertSheet(RSVP_SHEET);
   s.clear();
@@ -138,6 +144,7 @@ function setupInvitation_(ss) {
     s.getRange(2, 1, out.length, IHEADERS.length).setValues(out);
     s.getRange(2, ICOL.TEAPAI, out.length, 1).insertCheckboxes();
   }
+  SpreadsheetApp.flush();          // getLastRow() below must see the rows just written
   writeInvitationFormulas_(s);
 }
 
@@ -199,27 +206,78 @@ function writeInvitationFormulas_(s) {
   var no     = '=IF(B{r}="","",ROW()-1)';
   var link   = '=IF(B{r}="","", "' + SITE_URL + '?to=" & ENCODEURL(' + key + ') & "&max=" & IF(D{r}="",2,D{r})' +
                  ' & IF(E{r}=TRUE, "&teapai=1", ""))';
-  var status = '=IF(B{r}="","",' +
-                 'IFERROR(INDEX(RSVP!$E:$E, MATCH(' + key + ', RSVP!$B:$B, 0)),' +
-                   'IF(I{r}="", "Not opened", "Opened")))';
-  var pax    = '=IF(B{r}="","", IFERROR(INDEX(RSVP!$F:$F, MATCH(' + key + ', RSVP!$B:$B, 0)), ""))';
-
-  var N = [], L = [], S = [], P = [];
+  var N = [], L = [];
   for (var i = 0; i < n; i++) {
     var r = i + 2;
     N.push([no.replace(/\{r\}/g, r)]);
     L.push([link.replace(/\{r\}/g, r)]);
-    S.push([status.replace(/\{r\}/g, r)]);
-    P.push([pax.replace(/\{r\}/g, r)]);
   }
-  s.getRange(2, ICOL.NO,     n, 1).setFormulas(N);
-  s.getRange(2, ICOL.LINK,   n, 1).setFormulas(L);
-  s.getRange(2, ICOL.STATUS, n, 1).setFormulas(S);
-  s.getRange(2, ICOL.PAX,    n, 1).setFormulas(P);
+  s.getRange(2, ICOL.NO,   n, 1).setFormulas(N);
+  s.getRange(2, ICOL.LINK, n, 1).setFormulas(L);
+
+  syncInvitationStatus_(s);
 }
 
-/** Re-run after adding invitation rows, to extend the formulas down. */
+/**
+ * Mirrors each invitation's answer into Status and Pax confirmed, as plain
+ * values.
+ *
+ * These used to be INDEX/MATCH formulas looking the invitation name up in the
+ * RSVP tab. That made two independent things have to agree on a piece of text:
+ * the name the spreadsheet rebuilds from "Guest name & Companion name", and the
+ * key the web app wrote when the response came in. Any drift between them —
+ * different spacing or punctuation, a name edited after the link went out, or a
+ * response recorded by an older deployment writing different columns — silently
+ * produced blank cells, with nothing to say why.
+ *
+ * Matching in script removes that: both sides go through normKey_, the very
+ * function that produced the stored key, so they cannot disagree. Every RSVP is
+ * re-read on each call, which also means this repairs itself — run
+ * refreshLinks() and any row that was blank fills in.
+ */
+function syncInvitationStatus_(s) {
+  s = s || sheet_(INV_SHEET);
+  var n = s.getLastRow() - 1;
+  if (n < 1) return;
+
+  var rsvp = sheet_(RSVP_SHEET);
+  var answers = {};
+  if (rsvp.getLastRow() > 1) {
+    rsvp.getRange(2, 1, rsvp.getLastRow() - 1, HEADERS.length).getValues()
+      .forEach(function (r) {
+        var k = normKey_(r[COL.KEY - 1]);
+        if (k) answers[k] = { attending: r[COL.ATTENDING - 1], pax: r[COL.PAX - 1] };
+      });
+  }
+
+  var who    = s.getRange(2, ICOL.NAME,  n, 2).getValues();   // name + companion
+  var opened = s.getRange(2, ICOL.FIRST, n, 1).getValues();
+  var status = [], pax = [];
+
+  for (var i = 0; i < n; i++) {
+    var name = String(who[i][0]).trim();
+    if (!name) { status.push(['']); pax.push(['']); continue; }
+
+    var comp = String(who[i][1]).trim();
+    var a = answers[normKey_(comp ? name + ' & ' + comp : name)];
+    if (a) {
+      status.push([a.attending]);
+      pax.push([a.pax]);
+    } else {
+      status.push([String(opened[i][0]).trim() ? 'Opened' : 'Not opened']);
+      pax.push(['']);
+    }
+  }
+  s.getRange(2, ICOL.STATUS, n, 1).setValues(status);
+  s.getRange(2, ICOL.PAX,    n, 1).setValues(pax);
+}
+
+/**
+ * Re-run after adding invitation rows. Extends the number and link formulas
+ * down, and re-reads every RSVP to repair Status and Pax confirmed.
+ */
 function refreshLinks() {
+  SpreadsheetApp.flush();
   writeInvitationFormulas_(sheet_(INV_SHEET));
 }
 
@@ -268,6 +326,7 @@ function handleRsvp_(p) {
   }
 
   syncGuestList_(invNo, name, going === 'Attend' ? names : []);
+  try { syncInvitationStatus_(); } catch (err) { /* the response is already saved */ }
   return json_({ ok: true });
 }
 
@@ -320,6 +379,10 @@ function handleOpen_(p) {
   }
   s.getRange(row, ICOL.LAST).setValue(now);
   s.getRange(row, ICOL.OPENS).setValue((Number(s.getRange(row, ICOL.OPENS).getValue()) || 0) + 1);
+
+  var cell = s.getRange(row, ICOL.STATUS);
+  var now_ = String(cell.getValue()).trim();
+  if (!now_ || now_ === 'Not opened') cell.setValue('Opened');
   return json_({ ok: true });
 }
 

@@ -77,7 +77,15 @@ The `Tea Pai` tickbox in column E is per invitation: ticking it appends
 `&teapai=1` to that row's link, and the site drops the Tea Pai card from the
 event page for anyone whose link does not carry it.
 
-After adding invitation rows, run `refreshLinks()` to extend the formulas.
+After adding invitation rows, run `refreshLinks()`. It extends the invitation
+number and link formulas down, and re-reads every RSVP to rewrite `Status` and
+`Pax confirmed` — so it also repairs those if they look blank.
+
+`Status` and `Pax confirmed` are values written by the script, not formulas. They
+used to be INDEX/MATCH lookups on the invitation name, which meant the name the
+spreadsheet rebuilt and the key the web app stored had to agree on a piece of
+text; any drift produced silent blanks. Matching now happens in script, with both
+sides through the same `normKey_`.
 Editing `doGet`/`doPost` requires **Deploy → Manage deployments → New version** —
 saving alone does not update the live web app.
 
