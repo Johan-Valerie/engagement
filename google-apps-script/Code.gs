@@ -60,7 +60,7 @@ var GLIST_SHEET = 'Guest List';
 var DASH_SHEET  = 'Dashboard';
 var LEGACY_INV  = 'Guests';          // pre-rename name, migrated on setup()
 
-var SITE_URL = 'https://johangw.github.io/johan-valerie-engagement/';
+var SITE_URL = 'https://johan-valerie.github.io/engagement/';
 var TZ       = 'Asia/Jakarta';
 
 /* RSVP columns (1-based) */

@@ -3,7 +3,7 @@
 Static invitation site for the engagement of **Emanuella Valerie Didy** &amp; **Johan Ganda Wijaya**
 — **Saturday, 17 October 2026**, The St. Regis Jakarta.
 
-Live: <https://johangw.github.io/johan-valerie-engagement/>
+Live: <https://johan-valerie.github.io/engagement/>
 
 > Separate project from the wedding invitation
 > (`johangw/johan-valerie-invitation`, Jan 2027, Bangkok). Do not merge the two.
@@ -30,7 +30,7 @@ it, so nothing is left to re-enable.
 ## Guest links
 
 ```
-https://johangw.github.io/johan-valerie-engagement/?to=Mr.%20Budi%20%26%20Mrs.%20Sari&max=2
+https://johan-valerie.github.io/engagement/?to=Mr.%20Budi%20%26%20Mrs.%20Sari&max=2
 ```
 
 - `to`  — greeting name on the cover; it IS the guest's identity (there is no name field in the RSVP form) and becomes the sheet key
