@@ -156,6 +156,17 @@ rather than a pinned `maps.app.goo.gl` short link.
 
 - Cover/hero video ships as **two encodes** — `cover-portrait.mp4` (9:16, phones)
   and `cover-landscape.mp4` (16:9, desktop), switched by `<source media>`.
+  Both are H.264 High L4.0, 720p, 30fps, 22.7s, ~780kbps, video-only (no audio
+  track, so nothing competes with the soundtrack and muted autoplay is never in
+  question), and both are written faststart — `moov` ahead of `mdat`, so they
+  start on the first packets instead of after the whole file.
+- `poster-portrait.jpg` / `poster-landscape.jpg` are the first frames of the two
+  encodes. `poster` is a single attribute and cannot follow a media query the
+  way `<source>` does, so it is assigned by a small inline script sitting right
+  after the `<video>`. It has to be inline and adjacent: a poster is fetched
+  eagerly even under `preload="none"`, so `main.js` at the end of `<body>` would
+  run long after the wrong still was already on the wire. `poster-landscape.jpg`
+  doubles as the `og:image`.
 - Dress code shows two illustrated looks, `dresscode-1..2.webp` (560x840,
   ~79KB each). WebP because these are soft-gradient artwork on transparency:
   a 255-colour PNG palette bands them badly and full-depth PNG is 4x larger.
