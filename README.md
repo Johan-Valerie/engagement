@@ -94,6 +94,14 @@ the site, not by hand, and rebuilt for an invitation each time it re-submits) ·
 
 `setup()` is safe to re-run: it migrates every tab by header name, so data
 survives a column moving, and it renames an older `Guests` tab to `Invitation`.
+Tickboxes are applied through `ensureTickboxColumn_`, which reads a column,
+re-applies the checkbox, and writes the values back — `insertCheckboxes()` is
+documented as configuring cells rather than preserving them, and a re-run
+silently clearing every Tea Pai tick or Approved wish would be invisible until
+someone noticed wishes had vanished from the site.
+
+`refreshLinks()` also extends the tickboxes to rows added by hand after setup,
+which previously came out as plain empty cells.
 
 Two tickboxes are per invitation. `Tea Pai` (column E) appends `&teapai=1`;
 `Pentamoo` (column F) appends `&pentamoo=1`. Both default to off, so an

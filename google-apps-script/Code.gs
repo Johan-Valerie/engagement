@@ -92,10 +92,13 @@ function setup() {
 
   SpreadsheetApp.getUi().alert(
     'Setup complete.\n\n' +
-    'Tabs: Invitation (was "Guests", now with an invitation number and a ' +
-    'Tea Pai tickbox), Guest List (filled in by the site), RSVP, Dashboard.\n\n' +
-    'Tea Pai starts off for every row. Tick the rows that are invited, then ' +
-    'run refreshLinks() so their links pick it up.\n\n' +
+    'Tabs: Invitation (was "Guests", now with an invitation number and the ' +
+    'Tea Pai and Pentamoo tickboxes), Guest List (filled in by the site), ' +
+    'RSVP, Dashboard.\n\n' +
+    'Both tickboxes start off for every row. Tea Pai shows the Tea Pai card ' +
+    'and hides the Dress Code page; Pentamoo replaces the RSVP with a wishes ' +
+    'box. Tick the rows they apply to, then run refreshLinks() so their links ' +
+    'pick it up — a link already sent does NOT pick up a later tick.\n\n' +
     'Now Deploy → Manage deployments → edit → New version, so the live web app ' +
     'picks this up.');
 }
@@ -116,7 +119,12 @@ function setupRsvp_(ss) {
 
   if (kept.length) {
     s.getRange(2, 1, kept.length, HEADERS.length).setValues(kept);
-    s.getRange(2, COL.APPROVED, kept.length, 1).insertCheckboxes();
+    /* Read back, re-apply, write back: insertCheckboxes is documented as
+       configuring the cells rather than preserving what is in them, and an
+       Approved tick being silently cleared by a re-run of setup() would pull
+       every approved wish off the site. Doing it in this order is correct
+       either way. */
+    ensureTickboxColumn_(s, COL.APPROVED, kept.length);
   }
 }
 
@@ -156,8 +164,8 @@ function setupInvitation_(ss) {
               r[ICOL.FIRST - 1], r[ICOL.LAST - 1], r[ICOL.OPENS - 1]];
     });
     s.getRange(2, 1, out.length, IHEADERS.length).setValues(out);
-    s.getRange(2, ICOL.TEAPAI,   out.length, 1).insertCheckboxes();
-    s.getRange(2, ICOL.PENTAMOO, out.length, 1).insertCheckboxes();
+    /* Tickboxes are applied by writeInvitationFormulas_ below, which reads the
+       values back out and rewrites them afterwards — see ensureTickboxes_. */
   }
   SpreadsheetApp.flush();          // getLastRow() below must see the rows just written
   writeInvitationFormulas_(s);
@@ -191,7 +199,7 @@ function setupDashboard_(ss) {
    .setFontWeight('bold').setFontSize(14);
   var rows = [
     ['Invitations sent',     '=COUNTA(Invitation!B2:B)'],
-    ['Links opened',         '=COUNTIF(Invitation!I2:I,"<>")'],
+    ['Links opened',         '=COUNTIF(Invitation!J2:J,"<>")'],
     ['Responded',            '=COUNTA(RSVP!B2:B)'],
     ['Attending',            '=COUNTIF(RSVP!E2:E,"Attend")'],
     ['Not attending',        '=COUNTIF(RSVP!E2:E,"Not attend")'],
@@ -199,6 +207,7 @@ function setupDashboard_(ss) {
     ['Names on guest list',  "=COUNTA('Guest List'!B2:B)"],
     ['Seats allocated',      '=SUM(Invitation!D2:D)'],
     ['Invited to Tea Pai',   '=COUNTIF(Invitation!E2:E,TRUE)'],
+    ['Wishes-only (Pentamoo)','=COUNTIF(Invitation!F2:F,TRUE)'],
     ['Wishes awaiting approval',
      '=COUNTIFS(RSVP!H2:H,"<>",RSVP!I2:I,FALSE)']
   ];
@@ -231,7 +240,33 @@ function writeInvitationFormulas_(s) {
   s.getRange(2, ICOL.NO,   n, 1).setFormulas(N);
   s.getRange(2, ICOL.LINK, n, 1).setFormulas(L);
 
+  /* Rows typed in by hand after setup() ran had no tickbox in Tea Pai or
+     Pentamoo — setup() only applied them to the rows that existed at the time,
+     and nothing since put them on new ones. Extending them here means adding a
+     row and running refreshLinks() gives a row that looks like all the others. */
+  ensureTickboxColumn_(s, ICOL.TEAPAI,   n);
+  ensureTickboxColumn_(s, ICOL.PENTAMOO, n);
+
   syncInvitationStatus_(s);
+}
+
+/**
+ * Put tickboxes down a column without disturbing what is already ticked.
+ *
+ * insertCheckboxes() is documented as configuring cells for checked/unchecked
+ * rather than as preserving their contents, and the previous code called it
+ * straight after writing the values — so a re-run of setup() risked clearing
+ * every Tea Pai and Pentamoo tick, and every Approved wish, with nothing to
+ * say it had happened. Reading the column first and writing it back after is
+ * correct whichever way that behaves, and costs one extra round trip on a
+ * function that is only ever run by hand.
+ */
+function ensureTickboxColumn_(s, col, n) {
+  if (n < 1) return;
+  var range = s.getRange(2, col, n, 1);
+  var was   = range.getValues();
+  range.insertCheckboxes();
+  range.setValues(was.map(function (r) { return [r[0] === true]; }));
 }
 
 /**
@@ -301,10 +336,32 @@ function refreshLinks() {
 
 function doPost(e) {
   var p = {};
-  try { p = JSON.parse(e.postData.contents); } catch (err) { p = e.parameter || {}; }
+  try { p = JSON.parse(e.postData.contents); } catch (err) { p = (e && e.parameter) || {}; }
 
-  if (p.action === 'open') return handleOpen_(p);
-  return handleRsvp_(p);
+  /* Apps Script runs concurrent doPost calls in parallel, and both writers
+     below are read-modify-write over a whole tab: syncGuestList_ reads every
+     Guest List row, filters, and rewrites the block, and handleRsvp_ chooses
+     between updating a found row and appending a new one. Two guests
+     submitting within the same second could drop one another's guest names, or
+     append the same invitation twice. The links all go out at once, so that is
+     exactly when it would happen.
+
+     A script lock serialises them. The wait is deliberately long: the client
+     sends with mode:'no-cors' and never reads this response, so a request that
+     gives up here fails silently, which is far worse than one that waits. */
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+  } catch (err) {
+    return json_({ ok: false, error: 'busy' });
+  }
+
+  try {
+    if (p.action === 'open') return handleOpen_(p);
+    return handleRsvp_(p);
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function handleRsvp_(p) {
