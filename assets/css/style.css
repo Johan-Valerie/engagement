@@ -560,6 +560,18 @@ a{color:inherit;text-decoration:none}
   font-size:17px;line-height:1.7;letter-spacing:.6px;
   margin:20px auto 0;max-width:26ch;
 }
+/* Three 2:3 illustrations laid as one strip. width:100% on each flex item
+   rather than a fixed size, so the row always fills the column exactly and the
+   three stay the same height at every width. */
+.dc-looks{display:flex;gap:4px;align-items:flex-end;margin:18px 0 0}
+.dc-looks img{width:100%;height:auto;display:block;min-width:0}
+/* Three 2:3 portraits across a phone column are only ~110px each. Below the
+   tablet breakpoint the column is limited by the section padding rather than
+   its own max-width, so letting the strip run out to the page edges buys the
+   figures ~18% without changing anything else on the page. */
+@media (max-width:767px){
+  .dc-looks{margin-left:-24px;margin-right:-24px}
+}
 .dc-swatches{display:flex;justify-content:center;gap:10px;margin:16px 0 0}
 .dc-swatches i{
   width:44px;height:30px;border-radius:2px;

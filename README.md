@@ -113,6 +113,9 @@ and the Google Maps links, currently a generic search URL rather than a pinned
 
 - Cover/hero video ships as **two encodes** — `cover-portrait.mp4` (9:16, phones)
   and `cover-landscape.mp4` (16:9, desktop), switched by `<source media>`.
+- Dress code shows three illustrated looks, `dresscode-1..3.webp` (420x630,
+  ~70KB each). WebP because these are soft-gradient artwork on transparency:
+  a 255-colour PNG palette bands them badly and full-depth PNG is 4x larger.
 - Gallery photos (`g01`–`g14.jpg`) are built by template string in `main.js`,
   not written out in the markup — a plain filename grep will not find them.
 - Bride and groom portraits are 1200x1800 (2:3). Their crop is anchored with
