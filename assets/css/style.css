@@ -117,24 +117,6 @@ a{color:inherit;text-decoration:none}
 #groom .bg-img{object-position:50% 22%}
 #bride .bg-img{object-position:50% 38%}
 
-/* Cover-fit is by definition the SMALLEST scale that still fills the frame, so
-   on a wide desktop viewport a 2:3 portrait can only ever show a middle band —
-   42% of its height at 1440x900. No object-position can show more; the only way
-   to pull further back is to stop filling the frame. So above 768px the groom
-   portrait is contained (the whole photo, maximum zoom out) and the 420px that
-   opens either side is filled by a blurred, over-scaled copy of the same photo,
-   which keeps the page reading full-bleed. Phones stay on cover — there the
-   portrait already fills the screen top to bottom, nothing is cropped away. */
-@media (min-width:768px){
-  #groom::before{
-    content:"";position:absolute;inset:0;z-index:0;
-    background:url("../img/groom.jpg") center/cover no-repeat;
-    filter:blur(30px) saturate(.8) brightness(.62);
-    transform:scale(1.15);          /* hides the blur's soft edges */
-  }
-  #groom .bg-img{object-fit:contain;object-position:50% 50%}
-}
-
 .bg-scrim{
   position:absolute;inset:0;z-index:1;
   background:linear-gradient(rgba(0,0,0,.30) 0%,rgba(0,0,0,.42) 50%,rgba(0,0,0,.62) 100%);
