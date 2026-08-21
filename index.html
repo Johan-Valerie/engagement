@@ -87,7 +87,7 @@
 </div>
 
 <!-- ══════════════ CHROME ══════════════ -->
-<button id="nav-toggle" class="nav-toggle" aria-label="Menu">
+<button id="nav-toggle" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-menu">
   <img class="nav-mono" src="assets/img/monogram.png" alt="">
 </button>
 
@@ -239,9 +239,9 @@
 
           <div class="field" id="attend-field">
             <span class="field-label">ATTENDANCE</span>
-            <div class="toggle" id="f-attend">
-              <button type="button" class="toggle-btn" data-value="Attend">ATTEND</button>
-              <button type="button" class="toggle-btn" data-value="Not attend">NOT ATTEND</button>
+            <div class="toggle" id="f-attend" role="group" aria-label="Attendance">
+              <button type="button" class="toggle-btn" data-value="Attend" aria-pressed="false">ATTEND</button>
+              <button type="button" class="toggle-btn" data-value="Not attend" aria-pressed="false">NOT ATTEND</button>
             </div>
           </div>
 
@@ -326,7 +326,7 @@
 </main>
 
 <!-- lightbox -->
-<div id="lightbox" class="lightbox" hidden>
+<div id="lightbox" class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Photo viewer">
   <button class="lb-close" id="lb-close" aria-label="Close">&times;</button>
   <button class="lb-nav lb-prev" id="lb-prev" aria-label="Previous">&lsaquo;</button>
   <img id="lb-img" alt="">

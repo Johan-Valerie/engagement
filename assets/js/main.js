@@ -185,18 +185,20 @@ mBtn.addEventListener('click', () => {
 const navBtn  = $('#nav-toggle');
 const navMenu = $('#nav-menu');
 
-navBtn.addEventListener('click', () => {
-  navBtn.classList.toggle('open');
-  navMenu.classList.toggle('open');
-});
+function setNavOpen (open) {
+  navBtn.classList.toggle('open', open);
+  navMenu.classList.toggle('open', open);
+  navBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+navBtn.addEventListener('click', () => setNavOpen(!navBtn.classList.contains('open')));
 
 let navSettleWatch;
 $$('.nav-menu a').forEach(a => {
   a.addEventListener('click', e => {
     e.preventDefault();
     const target = $(a.getAttribute('href'));
-    navBtn.classList.remove('open');
-    navMenu.classList.remove('open');
+    setNavOpen(false);
     if (!target) return;
 
     /* the wedding's jump — pause snap, glide, re-arm — but re-arm only on
@@ -282,8 +284,19 @@ function fillRow (el, list) {
      carry a real src, so all that did was leave the click handler reading an
      undefined dataset.src, which indexOf turned into -1 and the lightbox
      turned into "always open the first photo". */
+  /* Each row is laid down twice so the wrap at the halfway mark is invisible.
+     Only the first copy is reachable: the second is the same photograph again,
+     so exposing it would give a keyboard user and a screen reader every picture
+     twice with no way to tell which was which. */
   el.innerHTML = [...list, ...list]
-    .map(src => `<img src="${src}" alt="" loading="lazy">`).join('');
+    .map((src, i) => {
+      if (i >= list.length) {
+        return `<img src="${src}" alt="" loading="lazy" aria-hidden="true" tabindex="-1">`;
+      }
+      const n = PHOTOS.indexOf(src) + 1;
+      return `<img src="${src}" alt="" loading="lazy" role="button" tabindex="0"` +
+             ` aria-label="Open photo ${n} of ${PHOTOS.length}">`;
+    }).join('');
 }
 fillRow($('#row-a'), rowA);
 fillRow($('#row-b'), rowB);
@@ -358,16 +371,45 @@ const lb     = $('#lightbox');
 const lbImg  = $('#lb-img');
 let   lbList = [], lbIdx = 0;
 
+/* Where focus was before the viewer opened, so it can go back there rather
+   than to the top of the document. */
+let lbReturn = null;
+
+function showLbPhoto () {
+  lbImg.src = lbList[lbIdx];
+  lbImg.alt = `Photo ${lbIdx + 1} of ${lbList.length}`;
+}
+
 function openLightbox (src) {
   lbList = PHOTOS;
   lbIdx  = Math.max(0, lbList.indexOf(src));
-  lbImg.src = lbList[lbIdx];
+  showLbPhoto();
+  lbReturn = document.activeElement;
   lb.hidden = false;
+  $('#lb-close').focus();
 }
+
+function closeLightbox () {
+  lb.hidden = true;
+  if (lbReturn && lbReturn.focus) lbReturn.focus();
+  lbReturn = null;
+}
+
 function stepLightbox (d) {
   lbIdx = (lbIdx + d + lbList.length) % lbList.length;
-  lbImg.src = lbList[lbIdx];
+  showLbPhoto();
 }
+
+/* The viewer covers the page, so Tab must not walk off behind it into the
+   gallery underneath. */
+lb.addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return;
+  const f = $$('button', lb);
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 /* Tap opens the slideshow, swipe just scrolls. The listener goes on each
    image rather than the row: iOS delivers taps to the element itself far
    more reliably than to a delegating parent, and a swipe that happens to
@@ -382,20 +424,28 @@ $$('.marquee').forEach(row => {
     if (Math.abs(t.clientX - sx) > 8 || Math.abs(t.clientY - sy) > 8) swiped = true;
   }, { passive: true });
 
-  $$('img', row).forEach(img => img.addEventListener('click', () => {
-    if (swiped) { swiped = false; return; }
+  $$('img', row).forEach(img => {
     /* getAttribute, not .src — the property resolves to an absolute URL and
        would never match the relative paths in PHOTOS. */
-    openLightbox(img.getAttribute('src'));
-  }));
+    const open = () => openLightbox(img.getAttribute('src'));
+    img.addEventListener('click', () => {
+      if (swiped) { swiped = false; return; }
+      open();
+    });
+    img.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      e.preventDefault();          /* Space would otherwise scroll the page */
+      open();
+    });
+  });
 });
-$('#lb-close').addEventListener('click', () => { lb.hidden = true; });
+$('#lb-close').addEventListener('click', closeLightbox);
 $('#lb-prev').addEventListener('click', () => stepLightbox(-1));
 $('#lb-next').addEventListener('click', () => stepLightbox(1));
-lb.addEventListener('click', e => { if (e.target === lb) lb.hidden = true; });
+lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(); });
 document.addEventListener('keydown', e => {
   if (lb.hidden) return;
-  if (e.key === 'Escape')     lb.hidden = true;
+  if (e.key === 'Escape')     closeLightbox();
   if (e.key === 'ArrowLeft')  stepLightbox(-1);
   if (e.key === 'ArrowRight') stepLightbox(1);
 });
@@ -541,8 +591,12 @@ function buildGuestFields (n) {
 
 $$('#f-attend .toggle-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    $$('#f-attend .toggle-btn').forEach(b => b.classList.remove('active'));
+    $$('#f-attend .toggle-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
+    });
     btn.classList.add('active');
+    btn.setAttribute('aria-pressed', 'true');
     attending = btn.dataset.value;
     touched = true;
 
