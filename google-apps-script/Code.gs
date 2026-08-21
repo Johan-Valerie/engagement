@@ -18,10 +18,23 @@
  * THE THREE TABS
  *   Invitation — one row per invitation (what used to be "Guests"). Column A
  *                is the invitation number, filled by formula from the row, so
- *                it is stable and never needs typing. Ticking "Tea Pai" adds
- *                &teapai=1 to that row's link, and the site shows the Tea Pai
- *                card only when the link carries it — so the tick has to
- *                happen BEFORE that link goes out.
+ *                it is stable and never needs typing.
+ *
+ *                Two tickboxes change what that invitation sees, by adding a
+ *                flag to its link. Both are read from the link alone, so a
+ *                tick has to happen BEFORE that link goes out — ticking it
+ *                afterwards does nothing until refreshLinks() is re-run and
+ *                the new link re-sent.
+ *
+ *                  Tea Pai  → &teapai=1   shows the Tea Pai card on Events,
+ *                                         and hides the Dress Code page (the
+ *                                         Tea Pai guests are family, dressed
+ *                                         for the ceremony, not the party).
+ *                  Pentamoo → &pentamoo=1 removes the RSVP entirely; that
+ *                                         invitation is asked only for a wish.
+ *                                         Their row records "Wishes only" and
+ *                                         no seats, so they never land in the
+ *                                         Guest List headcount.
  *   Guest List — one row per confirmed person, carrying the invitation number
  *                they belong to. Written by the site, not by hand: it is
  *                rebuilt for an invitation every time that invitation
@@ -56,10 +69,10 @@ var HEADERS = ['Timestamp','Guest link (key)','Invitation name','Invitation no.'
                'Attending','Pax','Guest names','Wishes','Approved'];
 
 /* Invitation columns (1-based) */
-var ICOL = { NO:1, NAME:2, COMPANION:3, SEATS:4, TEAPAI:5, LINK:6, STATUS:7, PAX:8,
-             FIRST:9, LAST:10, OPENS:11 };
+var ICOL = { NO:1, NAME:2, COMPANION:3, SEATS:4, TEAPAI:5, PENTAMOO:6, LINK:7,
+             STATUS:8, PAX:9, FIRST:10, LAST:11, OPENS:12 };
 var IHEADERS = ['Invitation no.','Guest name','Companion name','Max seats','Tea Pai',
-                'Personalized link','Status','Pax confirmed',
+                'Pentamoo','Personalized link','Status','Pax confirmed',
                 'First opened (WIB)','Last opened (WIB)','Opens'];
 
 /* Guest List columns (1-based) */
@@ -131,6 +144,7 @@ function setupInvitation_(ss) {
   s.setColumnWidth(ICOL.NAME, 210);
   s.setColumnWidth(ICOL.COMPANION, 180);
   s.setColumnWidth(ICOL.TEAPAI, 80);
+  s.setColumnWidth(ICOL.PENTAMOO, 90);
   s.setColumnWidth(ICOL.LINK, 460);
 
   // Rows with no guest name are noise from a previous layout.
@@ -138,11 +152,12 @@ function setupInvitation_(ss) {
   if (kept.length) {
     var out = kept.map(function (r) {
       return ['', r[ICOL.NAME - 1], r[ICOL.COMPANION - 1], r[ICOL.SEATS - 1] || 2,
-              r[ICOL.TEAPAI - 1] === true, '', '', '',
+              r[ICOL.TEAPAI - 1] === true, r[ICOL.PENTAMOO - 1] === true, '', '', '',
               r[ICOL.FIRST - 1], r[ICOL.LAST - 1], r[ICOL.OPENS - 1]];
     });
     s.getRange(2, 1, out.length, IHEADERS.length).setValues(out);
-    s.getRange(2, ICOL.TEAPAI, out.length, 1).insertCheckboxes();
+    s.getRange(2, ICOL.TEAPAI,   out.length, 1).insertCheckboxes();
+    s.getRange(2, ICOL.PENTAMOO, out.length, 1).insertCheckboxes();
   }
   SpreadsheetApp.flush();          // getLastRow() below must see the rows just written
   writeInvitationFormulas_(s);
@@ -205,7 +220,8 @@ function writeInvitationFormulas_(s) {
   var key    = 'TRIM(B{r}) & IF(TRIM(C{r})="", "", " & " & TRIM(C{r}))';
   var no     = '=IF(B{r}="","",ROW()-1)';
   var link   = '=IF(B{r}="","", "' + SITE_URL + '?to=" & ENCODEURL(' + key + ') & "&max=" & IF(D{r}="",2,D{r})' +
-                 ' & IF(E{r}=TRUE, "&teapai=1", ""))';
+                 ' & IF(E{r}=TRUE, "&teapai=1", "")' +
+                 ' & IF(F{r}=TRUE, "&pentamoo=1", ""))';
   var N = [], L = [];
   for (var i = 0; i < n; i++) {
     var r = i + 2;

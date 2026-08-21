@@ -11,9 +11,12 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const params    = new URLSearchParams(location.search);
 const GUEST     = (params.get('to') || '').trim();
 const MAX_PAX   = Math.max(1, parseInt(params.get('max'), 10) || 2);
-/* Tea Pai is invitation-by-invitation: the Sheet only appends &teapai=1 to
-   the link when that row is ticked, so the card is hidden unless asked for. */
+/* Both of these are invitation-by-invitation: the Sheet only appends the flag
+   to a link when that row is ticked, so the default for anyone else is off.
+     teapai   — shows the Tea Pai card on Events AND hides the Dress Code page.
+     pentamoo — no RSVP at all; that invitation is asked only for a wish. */
 const TEA_PAI   = params.get('teapai') === '1';
+const PENTAMOO  = params.get('pentamoo') === '1';
 
 /* ═══════════ 1 · INTRO / PRELOADER ═══════════ */
 
@@ -387,7 +390,20 @@ document.addEventListener('keydown', e => {
 
 /* ═══════════ 6b · TEA PAI ═══════════ */
 
-if (!TEA_PAI) {
+/* Removing a nav entry as well as the section: a menu link to a page that is
+   no longer in the document scrolls nowhere. */
+function dropSection (id) {
+  const sec = $('#' + id);
+  if (sec) sec.remove();
+  const link = $(`.nav-menu a[href="#${id}"]`);
+  if (link) link.closest('li').remove();
+}
+
+if (TEA_PAI) {
+  /* Tea Pai guests are close family, at the house for the ceremony rather than
+     the party, so the cocktail dress code does not apply to them. */
+  dropSection('dresscode');
+} else {
   const card = $('#teapai-card');
   const rule = $('#teapai-divider');
   if (card) card.remove();
@@ -434,12 +450,42 @@ let   reply     = null;    // this invitation's stored answer, once we know it
 let   savedNames = [];     // guest names it was submitted with
 let   touched   = false;   // has anyone started filling the form in?
 
-const TITLE_STEP1 = rsvpTitle.textContent;
-const LEDE_STEP1  = rsvpLede.innerHTML;      // carries the bold RSVP-by date
 const LEDE_STEP2  = 'Please write the name of everyone joining us, as you would like it to be read on the day.';
 
 if (!GUEST) nameField.hidden = false;
 const who = () => GUEST || nameIn.value.trim();
+
+/* ── wishes-only invitations ───────────────────────────────────
+   Same section, same submit, same thank-you panel — the attendance question
+   and everything it gates are simply not part of it. attending is pinned to a
+   value the Sheet can store so the row still upserts and still shows a Status;
+   pax stays 0, which keeps these invitations out of the Guest List headcount. */
+const WISHES_ONLY_STATUS = 'Wishes only';
+
+if (PENTAMOO) {
+  attending = WISHES_ONLY_STATUS;
+  $('#attend-field').remove();
+  paxField.remove();
+  step2.remove();
+  nextBtn.remove();
+  wishField.hidden = false;
+  /* The field label would be the third "WISHES" on one screen, under an
+     eyebrow and a heading that both already say it. */
+  const wishLabel = $('.field-label', wishField);
+  if (wishLabel) wishLabel.remove();
+  submit1.hidden   = false;
+  submit1.textContent = 'SEND WISHES';
+  $('#rsvp-eyebrow').textContent = 'WISHES';
+  rsvpTitle.textContent = 'SEND YOUR WISHES';
+  rsvpLede.textContent  = 'We would love to hear from you. Leave us a note and we will carry it with us on the day.';
+  const link = $('.nav-menu a[href="#rsvp"]');
+  if (link) link.textContent = 'Wishes';
+}
+
+/* Captured after the block above so EDIT RESPONSE restores whichever wording
+   this invitation actually opened with, not the RSVP one it never saw. */
+const TITLE_STEP1 = rsvpTitle.textContent;
+const LEDE_STEP1  = rsvpLede.innerHTML;      // carries the bold RSVP-by date
 
 for (let i = 1; i <= MAX_PAX; i++) {
   paxSel.insertAdjacentHTML('beforeend', `<option value="${i}">${i}</option>`);
@@ -516,6 +562,11 @@ form.addEventListener('submit', async e => {
   if (!who())     { fail('Please fill in your name.'); return; }
   if (!attending) { fail('Please choose whether you can attend.'); return; }
   if (!API_URL)   { fail('RSVP is not open yet — please check back soon.'); return; }
+  /* The wish is the whole submission for these invitations, so an empty one
+     has nothing to record. Everyone else may still submit without a wish. */
+  if (PENTAMOO && !$('#f-wishes').value.trim()) {
+    fail('Please write your wishes before sending.'); return;
+  }
 
   let names = [];
   if (going) {
@@ -597,14 +648,21 @@ function showAnswered (d) {
   form.hidden = true;
   answered.hidden = false;
   rsvpTitle.textContent = 'THANK YOU';
-  rsvpLede.textContent = going
-    ? 'Your response has been recorded. We can’t wait to celebrate with you.'
-    : 'Thank you for letting us know — you will be dearly missed.';
+  rsvpLede.textContent = PENTAMOO
+    ? 'Your wishes have been received, and they mean a great deal to us.'
+    : going
+      ? 'Your response has been recorded. We can’t wait to celebrate with you.'
+      : 'Thank you for letting us know — you will be dearly missed.';
 
-  let html = answerRow('ATTENDANCE', going ? 'Attending' : 'Not attending');
-  if (going) {
-    html += answerRow('GUESTS', String(d.pax || 0));
-    if (d.guests) html += answerRow('NAMES', String(d.guests).split(',').map(n => n.trim()).join(', '));
+  /* A wishes-only invitation was never asked about attendance, so reporting
+     one back would be inventing an answer it never gave. */
+  let html = '';
+  if (!PENTAMOO) {
+    html += answerRow('ATTENDANCE', going ? 'Attending' : 'Not attending');
+    if (going) {
+      html += answerRow('GUESTS', String(d.pax || 0));
+      if (d.guests) html += answerRow('NAMES', String(d.guests).split(',').map(n => n.trim()).join(', '));
+    }
   }
   if (d.wishes) html += answerRow('WISHES', d.wishes);
   answerList.innerHTML = html;
@@ -630,6 +688,7 @@ editBtn.addEventListener('click', () => {
   const going = d.attending === 'Attend';
 
   savedNames = String(d.guests || '').split(',').map(n => n.trim()).filter(Boolean);
+  if (PENTAMOO) attending = WISHES_ONLY_STATUS;  // the toggle that would set it is gone
   const pick = $(`#f-attend [data-value="${going ? 'Attend' : 'Not attend'}"]`);
   if (pick) pick.click();                       // reuses the show/hide logic
   if (going) paxSel.value = String(Math.min(Math.max(Number(d.pax) || 1, 1), MAX_PAX));
