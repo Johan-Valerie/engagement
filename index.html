@@ -8,7 +8,11 @@
 <meta name="description" content="The engagement of Emanuella Valerie Didy &amp; Johan Ganda Wijaya · Saturday, 17 October 2026 · The St. Regis Jakarta">
 <meta property="og:title" content="The Engagement of Valerie &amp; Johan">
 <meta property="og:description" content="Saturday, 17 October 2026 · The St. Regis Jakarta">
-<meta property="og:image" content="assets/img/poster-landscape.jpg">
+<!-- Absolute, not relative: Open Graph is read by a scraper that has no page
+     to resolve a relative path against, so a relative og:image means the
+     WhatsApp/Facebook preview comes through with no picture at all. -->
+<meta property="og:image" content="https://johan-valerie.github.io/engagement/assets/img/poster-landscape.jpg">
+<meta property="og:url" content="https://johan-valerie.github.io/engagement/">
 <meta property="og:type" content="website">
 <link rel="icon" href="assets/img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +22,7 @@
      cached independently for 10 minutes, so a phone can hold a new copy of
      one and a stale copy of the other — keeping both sources means the
      script face resolves under every combination. -->
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Pinyon+Script&family=Poppins:wght@300;400;500;600;700&family=Cormorant:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Pinyon+Script&family=Poppins:wght@300;400;500;600;700&family=Cormorant:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 <!-- The three things the opening seconds actually need: the intro crest
      (shown 3.5s in), the cover photo behind the greeting, and the face
@@ -56,6 +60,11 @@
 
   <div class="cover-inner">
     <div class="cover-top">
+      <!-- The visible title is three separate <p> lines so they can be staggered
+           and set in different faces, and <p> is not allowed inside <h1>. This
+           gives the document the one real heading it was missing without
+           touching the layout. -->
+      <h1 class="sr-only">The engagement of Valerie &amp; Johan &mdash; Saturday, 17 October 2026</h1>
       <p class="eyebrow">THE ENGAGEMENT OF</p>
       <div class="names-stagger">
         <p class="name-lg">Valerie</p>
