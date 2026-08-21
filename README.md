@@ -19,11 +19,13 @@ google-apps-script/Code.gs      RSVP backend (paste into the Sheet)
 ```
 
 Screen order: **Intro → Cover → Hero → Bride → Groom → Events →
-Dress Code → RSVP → Wedding Gift → Wishes → Gallery → Closing.**
+Dress Code → RSVP → Wishes → Gallery → Closing.**
 
 One `<video>` runs fixed behind every page (`#bg-video`); bride, groom and
 closing cover it with their own photos, everything else shows it through a
-scrim. The love-story page was removed at the couple's request.
+scrim. The love-story page and the wedding-gift page were both removed at the
+couple's request — the gift page's markup, CSS, JS and `bca.png` all went with
+it, so nothing is left to re-enable.
 
 ## Guest links
 
