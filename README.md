@@ -133,7 +133,7 @@ rather than a pinned `maps.app.goo.gl` short link.
 - Cover/hero video ships as **two encodes** — `cover-portrait.mp4` (9:16, phones)
   and `cover-landscape.mp4` (16:9, desktop), switched by `<source media>`.
 - Dress code shows two illustrated looks, `dresscode-1..2.webp` (560x840,
-  ~82KB each). WebP because these are soft-gradient artwork on transparency:
+  ~79KB each). WebP because these are soft-gradient artwork on transparency:
   a 255-colour PNG palette bands them badly and full-depth PNG is 4x larger.
   The strip is capped at 420px from the tablet breakpoint up: two 2:3 portraits
   across a full desktop column would stand 465px tall and push the swatches and
