@@ -438,6 +438,7 @@ a{color:inherit;text-decoration:none}
 .delay600ms{transition-delay:.6s!important}
 .delay700ms{transition-delay:.7s!important}
 .delay800ms{transition-delay:.8s!important}
+.delay900ms{transition-delay:.9s!important}
 .delay1000ms{transition-delay:1s!important}
 
 /* ─── Page 1 · hero ─── */
@@ -674,6 +675,18 @@ a{color:inherit;text-decoration:none}
   font-family:var(--script);font-size:clamp(20px,5.6vw,28px);
   line-height:1.5;text-align:center;color:rgba(255,255,255,.92);
   margin:14px 0 0;padding:0 30px;
+  /* Only engages once the line actually wraps, so the desktop single-liner is
+     untouched while phones stop stranding "loves." alone on line two. Older
+     Safari ignores it and falls back to a normal greedy wrap. */
+  text-wrap:balance;
+}
+/* The attribution sits in the UI face, not the script one — Pinyon is
+   unreadable at label size. Borrows the THE BRIDE / THE GROOM label treatment
+   so it reads as a caption under the quote rather than a second sentence. */
+.gallery-cite{
+  font-family:var(--ui);font-weight:600;font-size:10.5px;letter-spacing:2.6px;
+  text-align:center;color:rgba(241,193,147,.5);
+  margin:9px 0 0;padding:0 30px;
 }
 
 /* ─── Page 9 · closing ─── */
