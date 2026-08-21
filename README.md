@@ -159,12 +159,15 @@ rather than a pinned `maps.app.goo.gl` short link.
 - Bride and groom portraits are 1200x1800 (2:3). Their crop is anchored with
   `object-position` so a wide desktop viewport does not cut the faces off;
   phones crop these horizontally, so the vertical anchor has no effect there.
-- `soundtrack.mp3` is transcoded from `Media/Song.webm` (Opus). It ships as MP3
-  ONLY, deliberately: iOS Safari does not play WebM audio, and Playwright's
-  WebKit is not a safe proxy for that question — its Windows build has its own
-  media stack rather than Apple's, and it happily reported
-  `canPlayType('audio/webm')` as "probably" and played the file. Trusting that
-  would have meant silent music on an iPhone.
+- `soundtrack.m4a` is the AAC stream from `Media/Song_New.mp4`, **copied not
+  transcoded** (`-c:a copy`). The source is already AAC, so re-encoding to MP3
+  would have cost a lossy generation and 1MB more (5.1MB vs 4.1MB). A single
+  source is safe here because AAC is the baseline audio format on iOS Safari —
+  unlike WebM, which an earlier version of this file used and which iOS does
+  not play. Playwright's WebKit is not a safe proxy for codec questions (its
+  Windows build has its own media stack, and it reported WebM as "probably"
+  playable while reporting a null duration); for the m4a it reports the real
+  255.5s duration, which is what a genuine decode looks like.
 - Volume is 0.46 rather than the 0.55 the site was first tuned to: the current
   track is mastered 1.6 LU louder than the one it replaced (-9.5 vs -11.1 LUFS).
 - `monogram.webp` and `logo.webp` are LOSSLESS WebP, 63% smaller than the PNGs
