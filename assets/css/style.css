@@ -549,20 +549,15 @@ a{color:inherit;text-decoration:none}
 
 /* ─── Page 6 · dress code ─── */
 .dresscode{justify-content:center;align-items:center;text-align:center}
-.ghost-names{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  font-family:var(--display);font-size:clamp(38px,13vw,84px);
-  color:rgba(255,255,255,.07);white-space:nowrap;margin:0;z-index:1;letter-spacing:2px;
-}
 .dc-inner{max-width:460px;width:100%}
 .dc-theme{
   font-family:var(--display);font-weight:400;
   font-size:17px;line-height:1.7;letter-spacing:.6px;
   margin:20px auto 0;max-width:26ch;
 }
-/* Three 2:3 illustrations laid as one strip. width:100% on each flex item
+/* Two 2:3 illustrations laid as one strip. width:100% on each flex item
    rather than a fixed size, so the row always fills the column exactly and the
-   three stay the same height at every width. */
+   pair stay the same height at every width. */
 .dc-looks{display:flex;gap:8px;align-items:flex-end;justify-content:center;margin:18px 0 0}
 .dc-looks img{width:100%;height:auto;display:block;min-width:0}
 /* Two 2:3 portraits would otherwise take a full 620px desktop column and stand
