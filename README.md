@@ -50,6 +50,22 @@ The `Invitation` tab of the Sheet builds these links for you: type a name and a
 seat count, tick `Tea Pai` and/or `Pentamoo` as they apply, and the link appears
 in column G.
 
+## Search visibility
+
+The page carries `<meta name="robots" content="noindex, nofollow">`. It is a
+private event: the link should work for anyone holding it, but the invitation
+should not surface in a search for either name.
+
+There is deliberately **no `robots.txt`**. A crawler only reads that file at the
+domain root, `johan-valerie.github.io/robots.txt`, which would belong to a
+`Johan-Valerie.github.io` repo that does not exist — one placed inside
+`/engagement/` is never fetched by anything. The meta tag travels with the page,
+so it is the only mechanism that works from a project subpath. (GitHub Pages
+serves no custom headers, so `X-Robots-Tag` is not an option either.)
+
+Link-preview scrapers ignore `robots`, so WhatsApp and iMessage still render the
+Open Graph card.
+
 ## RSVP flow
 
 Attendance first. **Not attending** → wishes → submit. **Attending** → number of

@@ -6,6 +6,14 @@
 <meta name="theme-color" content="#191413">
 <title>Valerie &amp; Johan — Engagement</title>
 <meta name="description" content="The engagement of Emanuella Valerie Didy &amp; Johan Ganda Wijaya · Saturday, 17 October 2026 · The St. Regis Jakarta">
+<!-- Private event. Not a secret, but it should not turn up in a Google search
+     for either name. robots.txt cannot do this job here: a crawler only reads
+     it at the DOMAIN root (johan-valerie.github.io/robots.txt), which belongs
+     to an org-root repo that does not exist — a robots.txt inside
+     /engagement/ is never fetched. The meta tag travels with the page, so it
+     works from a project subpath. Link-preview scrapers (WhatsApp, iMessage)
+     ignore it, so the og: card below still renders. -->
+<meta name="robots" content="noindex, nofollow">
 <meta property="og:title" content="The Engagement of Valerie &amp; Johan">
 <meta property="og:description" content="Saturday, 17 October 2026 · The St. Regis Jakarta">
 <!-- Absolute, not relative: Open Graph is read by a scraper that has no page
