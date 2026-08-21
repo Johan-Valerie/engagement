@@ -105,9 +105,12 @@ Filled in already: parents' names both sides, and Caroline Astor Ballroom for
 both events. Instagram links were removed at the couple's request — the bride
 and groom pages end on the parents' line.
 
-Also worth confirming: the dress-code swatch hexes in `style.css` (`.dc-swatches`)
-and the Google Maps links, currently a generic search URL rather than a pinned
-`maps.app.goo.gl` short link.
+The dress-code swatches are inline `background` values on the `<i>` elements in
+`index.html`, not in the stylesheet. They run brown to taupe and were sampled
+from the two illustrations, so changing the artwork means resampling them.
+
+Still worth confirming: the Google Maps links, currently a generic search URL
+rather than a pinned `maps.app.goo.gl` short link.
 
 ## Media notes
 
