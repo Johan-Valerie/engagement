@@ -69,10 +69,10 @@ var HEADERS = ['Timestamp','Guest link (key)','Invitation name','Invitation no.'
                'Attending','Pax','Guest names','Wishes','Approved'];
 
 /* Invitation columns (1-based) */
-var ICOL = { NO:1, NAME:2, COMPANION:3, SEATS:4, TEAPAI:5, PENTAMOO:6, LINK:7,
-             STATUS:8, PAX:9, FIRST:10, LAST:11, OPENS:12 };
+var ICOL = { NO:1, NAME:2, COMPANION:3, SEATS:4, TEAPAI:5, PENTAMOO:6, CODE:7,
+             LINK:8, STATUS:9, PAX:10, FIRST:11, LAST:12, OPENS:13 };
 var IHEADERS = ['Invitation no.','Guest name','Companion name','Max seats','Tea Pai',
-                'Pentamoo','Personalized link','Status','Pax confirmed',
+                'Pentamoo','Code','Personalized link','Status','Pax confirmed',
                 'First opened (WIB)','Last opened (WIB)','Opens'];
 
 /* Guest List columns (1-based) */
@@ -145,14 +145,18 @@ function setupInvitation_(ss) {
   s.setColumnWidth(ICOL.COMPANION, 180);
   s.setColumnWidth(ICOL.TEAPAI, 80);
   s.setColumnWidth(ICOL.PENTAMOO, 90);
+  s.setColumnWidth(ICOL.CODE, 90);
   s.setColumnWidth(ICOL.LINK, 460);
 
   // Rows with no guest name are noise from a previous layout.
   kept = kept.filter(function (r) { return String(r[ICOL.NAME - 1]).trim() !== ''; });
   if (kept.length) {
     var out = kept.map(function (r) {
+      /* The code is carried across verbatim. It is the identity a live link
+         points at, so regenerating one would silently kill that link. */
       return ['', r[ICOL.NAME - 1], r[ICOL.COMPANION - 1], r[ICOL.SEATS - 1] || 2,
-              r[ICOL.TEAPAI - 1] === true, r[ICOL.PENTAMOO - 1] === true, '', '', '',
+              r[ICOL.TEAPAI - 1] === true, r[ICOL.PENTAMOO - 1] === true,
+              r[ICOL.CODE - 1], '', '', '',
               r[ICOL.FIRST - 1], r[ICOL.LAST - 1], r[ICOL.OPENS - 1]];
     });
     s.getRange(2, 1, out.length, IHEADERS.length).setValues(out);
@@ -217,11 +221,16 @@ function writeInvitationFormulas_(s) {
   var n = last - 1;
   if (n < 1) return;
 
-  var key    = 'TRIM(B{r}) & IF(TRIM(C{r})="", "", " & " & TRIM(C{r}))';
-  var no     = '=IF(B{r}="","",ROW()-1)';
-  var link   = '=IF(B{r}="","", "' + SITE_URL + '?to=" & ENCODEURL(' + key + ') & "&max=" & IF(D{r}="",2,D{r})' +
-                 ' & IF(E{r}=TRUE, "&teapai=1", "")' +
-                 ' & IF(F{r}=TRUE, "&pentamoo=1", ""))';
+  ensureCodes_(s, n);
+
+  var no   = '=IF(B{r}="","",ROW()-1)';
+  /* Nothing about the guest is in the link any more — no name, no seat count,
+     no flags. Just the invitation number with its code stuck on the end, so it
+     reads as one number. The site resolves the rest from the CODE, never from
+     the leading digits, which is what lets a row be deleted or reordered
+     without killing links that are already out. */
+  var link = '=IF(OR(B{r}="",G{r}=""),"", "' + SITE_URL + '?i=" & (ROW()-1) & G{r})';
+
   var N = [], L = [];
   for (var i = 0; i < n; i++) {
     var r = i + 2;
@@ -232,6 +241,51 @@ function writeInvitationFormulas_(s) {
   s.getRange(2, ICOL.LINK, n, 1).setFormulas(L);
 
   syncInvitationStatus_(s);
+}
+
+/**
+ * Give every named row a code, once. Written as a VALUE, never a formula:
+ * a code that recalculated would break every link already sent. Existing
+ * codes are left exactly as they are — this only fills blanks.
+ * Six digits, 100000-999999, so the link can be split by taking the last six
+ * characters without worrying about a leading zero being swallowed.
+ */
+function ensureCodes_(s, n) {
+  var names = s.getRange(2, ICOL.NAME, n, 1).getValues();
+  var codes = s.getRange(2, ICOL.CODE, n, 1).getValues();
+
+  var used = {};
+  codes.forEach(function (c) {
+    var v = String(c[0]).trim();
+    if (v) used[v] = true;
+  });
+
+  var dirty = false;
+  for (var i = 0; i < n; i++) {
+    if (!String(names[i][0]).trim()) continue;      // blank row, nothing to key
+    if (String(codes[i][0]).trim()) continue;       // already has one, keep it
+    var c;
+    do { c = String(Math.floor(100000 + Math.random() * 900000)); } while (used[c]);
+    used[c] = true;
+    codes[i][0] = c;
+    dirty = true;
+  }
+  if (dirty) {
+    s.getRange(2, ICOL.CODE, n, 1).setValues(codes);
+    s.getRange(2, ICOL.CODE, n, 1).setNumberFormat('@');   // keep it text, not 1.0E5
+    SpreadsheetApp.flush();
+  }
+}
+
+/** The invitation row carrying this code, or 0. */
+function invitationRowByCode_(s, code) {
+  code = String(code || '').trim();
+  if (!code || s.getLastRow() < 2) return 0;
+  var codes = s.getRange(2, ICOL.CODE, s.getLastRow() - 1, 1).getValues();
+  for (var i = 0; i < codes.length; i++) {
+    if (String(codes[i][0]).trim() === code) return i + 2;
+  }
+  return 0;
 }
 
 /**
@@ -386,6 +440,8 @@ function renumberGuestList_(s) {
   s.getRange(2, GLCOL.NO, n, 1).setValues(nums);
 }
 
+/* Kept for links issued before the ?i= token existed, which identify
+   themselves by name rather than by code. */
 function handleOpen_(p) {
   var key = normKey_(p.key);
   if (!key) return json_({ ok: false });
@@ -394,6 +450,12 @@ function handleOpen_(p) {
   var row = invitationRow_(s, key);
   if (!row) return json_({ ok: false });
 
+  touchInvitationRow_(s, row);
+  return json_({ ok: true });
+}
+
+/** Stamp first/last opened and bump the counter on one invitation row. */
+function touchInvitationRow_(s, row) {
   /* Status..Opens is one contiguous block, so the whole update is a single
      read and a single write. */
   var span = ICOL.OPENS - ICOL.STATUS + 1;
@@ -409,13 +471,55 @@ function handleOpen_(p) {
   if (!state || state === 'Not opened') v[i(ICOL.STATUS)] = 'Opened';
 
   s.getRange(row, ICOL.STATUS, 1, span).setValues([v]);
-  return json_({ ok: true });
 }
 
 function doGet(e) {
   var action = (e && e.parameter && e.parameter.action) || 'wishes';
   if (action === 'status') return json_(getStatus_(e.parameter.key));
+  if (action === 'invite') return json_(getInvite_(e.parameter.i));
   return json_(getWishes_());
+}
+
+/**
+ * Resolve one ?i= token. The page has no idea who it belongs to until this
+ * comes back, so it answers everything at once — who they are, how many seats,
+ * which pages they see, and whatever they have already replied — rather than
+ * making the site pay a second Apps Script round trip for the reply.
+ *
+ * Only the last six digits matter. The leading digits are the invitation
+ * number, there so the link reads as something rather than a random blob, and
+ * they are deliberately NOT checked: if a row moves, its number changes, and a
+ * link already sent must keep working.
+ */
+function getInvite_(token) {
+  token = String(token || '').replace(/[^0-9]/g, '');
+  if (token.length < 6) return { found: false };
+  var code = token.slice(-6);
+
+  var s   = sheet_(INV_SHEET);
+  var row = invitationRowByCode_(s, code);
+  if (!row) return { found: false };
+
+  var v = s.getRange(row, 1, 1, IHEADERS.length).getValues()[0];
+  var name = String(v[ICOL.NAME - 1]).trim();
+  var comp = String(v[ICOL.COMPANION - 1]).trim();
+  var key  = comp ? name + ' & ' + comp : name;
+
+  var out = {
+    found:      true,
+    key:        key,
+    invitation: v[ICOL.NO - 1],
+    max:        Number(v[ICOL.SEATS - 1]) || 2,
+    teapai:     v[ICOL.TEAPAI - 1] === true,
+    pentamoo:   v[ICOL.PENTAMOO - 1] === true,
+    reply:      getStatus_(key)
+  };
+
+  /* Same bookkeeping the old ?action=open beacon did. Folding it in here means
+     one request on load instead of two, and it can no longer be missed by a
+     guest who closes the page while Apps Script is still cold. */
+  try { touchInvitationRow_(s, row); } catch (err) { /* never fail the lookup */ }
+  return out;
 }
 
 /** The name on a wish is the invitation name — guests never type one. */

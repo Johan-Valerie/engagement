@@ -29,35 +29,48 @@ it, so nothing is left to re-enable.
 
 ## Guest links
 
+A link is one number and nothing else:
+
 ```
-https://johan-valerie.github.io/engagement/?to=Mr.%20Budi%20%26%20Mrs.%20Sari&max=2
+https://johan-valerie.github.io/engagement/?i=712345
 ```
 
-- `to`  — greeting name on the cover; it IS the guest's identity (there is no name field in the RSVP form) and becomes the sheet key
-- `max` — caps the guest-count dropdown
-- `teapai=1` — shows the Tea Pai card on the event page AND removes the Dress
-  Code page. Tea Pai guests are close family, there for the ceremony rather
-  than the party, so the cocktail dress code does not apply to them
-- `pentamoo=1` — removes the RSVP. That invitation is asked only for a wish:
-  no attendance question, no seat count, no guest names. Their row records
-  `Wishes only` with 0 pax, so they never enter the Guest List headcount
+`7` is the invitation number; `12345…` — always the **last six digits** — is
+that row's `Code`. Only the code identifies anything. The leading digits are
+there so the link means something to us, and are deliberately not checked: the
+invitation number is a formula on row position, so deleting a row renumbers
+everything below it, and links already sent have to keep working.
 
-Both flags are read from the link and nothing else, so a tick has to be made
-BEFORE that link is sent. Ticking one afterwards changes nothing until
-`refreshLinks()` is re-run and the new link re-sent.
+Nothing about the guest is in the URL. That is not only so it reads less like a
+dossier — the old `?to=…&max=2&teapai=1` form was **editable**. A guest could
+type `max=2` up to `max=8`, or append `&teapai=1` and see Tea Pai details they
+were not invited to. Seats and flags now come from the Sheet, where the guest
+cannot reach them.
 
-The `Invitation` tab of the Sheet builds these links for you: type a name and a
-seat count, tick `Tea Pai` and/or `Pentamoo` as they apply, and the link appears
-in column G.
+**A consequence worth knowing: ticking a flag now works retroactively.** The
+site asks the Sheet for the name, seat count, `Tea Pai` and `Pentamoo` every
+time a link is opened, so ticking a box after the link has gone out simply
+works the next time that guest opens it — no re-send, no `refreshLinks()`. That
+was not true of the old links, where the flag was baked into the URL. (A guest
+who already opened it once holds a cached copy; the site notices the mismatch
+and reloads itself once, so they still land on the right version.)
+
+`refreshLinks()` is now only needed after **adding rows** — it fills in each new
+row's `Code` and extends the link formula down.
+
+The `Invitation` tab builds the links: type a name and a seat count, tick
+`Tea Pai` and/or `Pentamoo` as they apply, and the link appears in column H.
+The `Code` in column G is generated once and written as a value, never a
+formula — a code that recalculated would kill every link already sent.
 
 ## RSVP flow
 
 Attendance first. **Not attending** → wishes → submit. **Attending** → number of
 guests → wishes → **next** → one field per guest name → submit. Guests never
-type their own name: the wish is signed with the invitation name from `?to=`,
+type their own name: the wish is signed with the invitation name the link resolved to,
 and the names collected on the second step go to the `Guest List` tab.
 
-A `pentamoo=1` invitation skips all of that and sees a single wishes field. It
+A `Pentamoo` invitation skips all of that and sees a single wishes field. It
 still submits through the same POST and gets the same thank-you panel and EDIT
 RESPONSE button; only the attendance question and what it gates are absent. A
 wish is required there, since it is the entire submission.
@@ -95,14 +108,16 @@ the site, not by hand, and rebuilt for an invitation each time it re-submits) ·
 `setup()` is safe to re-run: it migrates every tab by header name, so data
 survives a column moving, and it renames an older `Guests` tab to `Invitation`.
 
-Two tickboxes are per invitation. `Tea Pai` (column E) appends `&teapai=1`;
-`Pentamoo` (column F) appends `&pentamoo=1`. Both default to off, so an
-untouched row produces the ordinary invitation. See the link-parameter list
-above for what each one changes.
+Two tickboxes are per invitation: `Tea Pai` (column E) and `Pentamoo`
+(column F). Both default to off, so an untouched row produces the ordinary
+invitation. Neither is in the link any more — the site reads them from the row
+on every open, which is why ticking one takes effect without re-sending
+anything. See the Guest links section above for what each changes.
 
-After adding invitation rows, run `refreshLinks()`. It extends the invitation
-number and link formulas down, and re-reads every RSVP to rewrite `Status` and
-`Pax confirmed` — so it also repairs those if they look blank.
+After adding invitation rows, run `refreshLinks()`. It gives each new row a
+`Code`, extends the invitation number and link formulas down, and re-reads
+every RSVP to rewrite `Status` and `Pax confirmed` — so it also repairs those
+if they look blank. Existing codes are never regenerated.
 
 `Status` and `Pax confirmed` are values written by the script, not formulas. They
 used to be INDEX/MATCH lookups on the invitation name, which meant the name the
