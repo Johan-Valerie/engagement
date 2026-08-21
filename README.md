@@ -167,6 +167,14 @@ rather than a pinned `maps.app.goo.gl` short link.
   would have meant silent music on an iPhone.
 - Volume is 0.46 rather than the 0.55 the site was first tuned to: the current
   track is mastered 1.6 LU louder than the one it replaced (-9.5 vs -11.1 LUFS).
+- `monogram.webp` and `logo.webp` are LOSSLESS WebP, 63% smaller than the PNGs
+  they replaced (53KB->20KB, 34KB->13KB). Lossless because these are delicate
+  white script marks on transparency: a 256-colour PNG is 88% smaller still,
+  but roughens the antialiasing on the thin strokes. The monogram is preloaded
+  at high priority, so its 33KB came straight out of the opening burst.
+- `favicon.png` is a dedicated 64px icon. The tab used to point at the full
+  260px closing mark, which pulled 33KB into the critical path to draw a 16px
+  tile.
 - Fonts are Google-hosted stand-ins for the reference's commercial faces:
   Playfair Display (display), Pinyon Script (script), Poppins (UI), Cormorant.
 - **Milton One Bold** is self-hosted in `assets/fonts/` — it is not a Google

@@ -14,7 +14,9 @@
 <meta property="og:image" content="https://johan-valerie.github.io/engagement/assets/img/poster-landscape.jpg">
 <meta property="og:url" content="https://johan-valerie.github.io/engagement/">
 <meta property="og:type" content="website">
-<link rel="icon" href="assets/img/logo.png">
+<!-- A dedicated 64px icon. The tab was previously pointed at the full 260px
+     closing mark, which put 33KB into the opening burst to draw a 16px tile. -->
+<link rel="icon" href="assets/img/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Poppins 200/800 dropped (never used). Pinyon Script is ALSO self-hosted
@@ -27,7 +29,7 @@
 <!-- The three things the opening seconds actually need: the intro crest
      (shown 3.5s in), the cover photo behind the greeting, and the face
      the two names are set in. Everything else can wait its turn. -->
-<link rel="preload" as="image" href="assets/img/monogram.png" fetchpriority="high">
+<link rel="preload" as="image" href="assets/img/monogram.webp" fetchpriority="high">
 <link rel="preload" as="image" href="assets/img/landing.jpg" fetchpriority="high">
 <link rel="preload" as="font" type="font/woff2" href="assets/fonts/MiltonOneBold.woff2" crossorigin>
 <!-- the bride/groom names are set in this one; preloaded from our own origin
@@ -47,7 +49,7 @@
     <div class="first-text">THE ENGAGEMENT OF</div>
     <div class="intro-stack">
       <div class="intro-name">EMANUELLA VALERIE DIDY</div>
-      <img src="assets/img/monogram.png" alt="" class="crest" fetchpriority="high">
+      <img src="assets/img/monogram.webp" alt="" class="crest" fetchpriority="high">
       <div class="intro-name">JOHAN GANDA WIJAYA</div>
     </div>
   </div>
@@ -88,7 +90,7 @@
 
 <!-- ══════════════ CHROME ══════════════ -->
 <button id="nav-toggle" class="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-menu">
-  <img class="nav-mono" src="assets/img/monogram.png" alt="">
+  <img class="nav-mono" src="assets/img/monogram.webp" alt="">
 </button>
 
 <nav id="nav-menu" class="nav-menu">
@@ -318,7 +320,7 @@
     <div class="closing-inner">
       <h2 class="section-title reanimate fade delay200ms">WITH HEARTFELT GRATITUDE FOR YOUR PRESENCE AND BLESSINGS</h2>
       <p class="lede reanimate fade delay400ms">We can't wait to share this special moment with you. Your presence will make our day even more meaningful.</p>
-      <img class="closing-mark reanimate fade delay600ms" src="assets/img/logo.png" alt="">
+      <img class="closing-mark reanimate fade delay600ms" src="assets/img/logo.webp" alt="">
       <p class="closing-names reanimate fade delay800ms">VALERIE &amp; JOHAN</p>
     </div>
   </section>
