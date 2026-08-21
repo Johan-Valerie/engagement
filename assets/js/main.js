@@ -8,67 +8,15 @@ const API_URL = 'https://script.google.com/macros/s/AKfycby5HHwzTxSv5x0qr-HreHwc
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-const params = new URLSearchParams(location.search);
-
-/* ── the invitation token ──────────────────────────────────────
-   A link is one number: the invitation number with a six-digit code stuck on
-   the end, e.g. ?i=712345. Nothing else — no name, no seat count, no flags.
-   That is partly so it does not read as a dossier on the guest, and partly
-   because the old parameters were editable: max=2 could be typed up to max=8,
-   and adding &teapai=1 showed Tea Pai details to someone not invited to it.
-
-   Only the last six digits identify anything. The leading digits are the
-   invitation number, there to make the link mean something to us, and they are
-   deliberately not checked — the number is a formula on the row position, so a
-   deleted row would renumber everything below it and invalidate links that are
-   already out.
-
-   Everything the page needs comes back from one lookup. Until it lands these
-   hold their safe defaults: no name, two seats, no flags — which is exactly
-   how a stranger with a bare URL should be treated. */
-const TOKEN = (params.get('i') || '').replace(/[^0-9]/g, '');
-
-let GUEST    = (params.get('to') || '').trim();   // legacy links, and testing
-let MAX_PAX  = Math.max(1, parseInt(params.get('max'), 10) || 2);
-let TEA_PAI  = params.get('teapai') === '1';
-let PENTAMOO = params.get('pentamoo') === '1';
-
-/* Resolved invitations are cached, so the only visit that can ever wait on
-   Apps Script is the first one. */
-const INV_CACHE = 'inv:' + TOKEN;
-
-function cachedInvite () {
-  if (!TOKEN) return null;
-  try { return JSON.parse(localStorage.getItem(INV_CACHE) || 'null'); }
-  catch (err) { return null; }
-}
-
-async function fetchInvite () {
-  if (!TOKEN || !API_URL) return null;
-  const ask = (async () => {
-    const res  = await fetch(`${API_URL}?action=invite&i=${encodeURIComponent(TOKEN)}`);
-    const data = await res.json();
-    if (!data || !data.found) return null;
-    try { localStorage.setItem(INV_CACHE, JSON.stringify(data)); } catch (err) {}
-    return data;
-  })();
-  /* The greeting is hidden until this settles, so it has to settle. A request
-     that is merely slow rejects nothing and would leave it hidden forever.
-     If the answer does turn up after the timeout, still use it — the gates
-     are long since decided by then, but the name costs nothing to correct. */
-  ask.then(d => {
-    if (d && !GUEST) { adopt(d); applyGuestName(); showReply(d.reply); }
-  }).catch(() => {});
-
-  return Promise.race([
-    ask.catch(() => null),
-    new Promise(r => setTimeout(() => r(null), 8000))
-  ]);
-}
-
-/* Fired here, at the top of the file, so it runs alongside the intro animation
-   rather than after it. */
-const invitePromise = TOKEN ? fetchInvite() : Promise.resolve(null);
+const params    = new URLSearchParams(location.search);
+const GUEST     = (params.get('to') || '').trim();
+const MAX_PAX   = Math.max(1, parseInt(params.get('max'), 10) || 2);
+/* Both of these are invitation-by-invitation: the Sheet only appends the flag
+   to a link when that row is ticked, so the default for anyone else is off.
+     teapai   — shows the Tea Pai card on Events AND hides the Dress Code page.
+     pentamoo — no RSVP at all; that invitation is asked only for a wish. */
+const TEA_PAI   = params.get('teapai') === '1';
+const PENTAMOO  = params.get('pentamoo') === '1';
 
 /* ═══════════ 1 · INTRO / PRELOADER ═══════════ */
 
@@ -102,27 +50,7 @@ window.addEventListener('beforeunload', () => window.scrollTo(0, 0));
 
 /* ═══════════ 2 · COVER ═══════════ */
 
-/* The intro and the cover both greet by name, and the name now arrives from
-   the Sheet. Rendering the "Guest" placeholder in the meantime meant a guest
-   on a cold Apps Script read "Dear, Guest" for the whole intro and then
-   watched it swap — or never saw their name at all if the lookup outlasted
-   the preloader. So while a token is pending both greetings are hidden
-   (visibility, not display, so the intro's layout does not shift) and they
-   appear together once there is something real to show. A lookup that fails
-   falls back to "Guest" rather than staying blank. */
-const greetings = () => [$('.intro-greeting'), $('#guest-name')];
-function showGreetings (on) {
-  greetings().forEach(el => { if (el) el.style.visibility = on ? '' : 'hidden'; });
-}
-if (TOKEN && !GUEST) showGreetings(false);
-
-/* Re-runnable: called when the invitation resolves, and again from cache on a
-   revisit, which is instant. */
-function applyGuestName () {
-  $('#guest-name').textContent = GUEST || 'Guest';
-  renderIntroGuest();
-  showGreetings(true);
-}
+if (GUEST) $('#guest-name').textContent = GUEST;   // cover
 
 /* ── intro greeting ──────────────────────────────────────────────
    The Sheet builds a couple's key as "Name & Companion", so split on
@@ -167,6 +95,7 @@ function renderIntroGuest () {
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
   addEventListener('resize', fit);
 }
+renderIntroGuest();
 
 $('#open-invitation').addEventListener('click', () => {
   /* the wedding's open sequence: snap off, unlock, glide to the hero,
@@ -184,7 +113,7 @@ $('#open-invitation').addEventListener('click', () => {
   armReveals();
   $('#music-toggle').classList.add('show');
   $('#nav-toggle').classList.add('show');
-  if (!TOKEN) trackOpen();   /* a ?i= link is stamped by the lookup itself */
+  trackOpen();
 
   setTimeout(() => {
     MAIN.style.scrollSnapType = 'y mandatory';
@@ -482,16 +411,11 @@ function dropSection (id) {
   if (link) link.closest('li').remove();
 }
 
-/* Deliberately NOT run at parse time. Both branches destroy DOM, and the flag
-   now arrives from the Sheet rather than the URL — acting on a default of
-   "off" and then learning it was on would leave nothing to put back. */
-function applyTeaPai () {
-  if (TEA_PAI) {
-    /* Tea Pai guests are close family, at the house for the ceremony rather
-       than the party, so the cocktail dress code does not apply to them. */
-    dropSection('dresscode');
-    return;
-  }
+if (TEA_PAI) {
+  /* Tea Pai guests are close family, at the house for the ceremony rather than
+     the party, so the cocktail dress code does not apply to them. */
+  dropSection('dresscode');
+} else {
   const card = $('#teapai-card');
   const rule = $('#teapai-divider');
   if (card) card.remove();
@@ -540,6 +464,7 @@ let   touched   = false;   // has anyone started filling the form in?
 
 const LEDE_STEP2  = 'Please write the name of everyone joining us, as you would like it to be read on the day.';
 
+if (!GUEST) nameField.hidden = false;
 const who = () => GUEST || nameIn.value.trim();
 
 /* ── wishes-only invitations ───────────────────────────────────
@@ -549,50 +474,35 @@ const who = () => GUEST || nameIn.value.trim();
    pax stays 0, which keeps these invitations out of the Guest List headcount. */
 const WISHES_ONLY_STATUS = 'Wishes only';
 
-/* Captured inside applyPentamoo below, once the wording is settled, so EDIT
-   RESPONSE restores whichever version this invitation actually opened with
-   rather than the RSVP one a wishes-only guest never saw. */
-let TITLE_STEP1 = rsvpTitle.textContent;
-let LEDE_STEP1  = rsvpLede.innerHTML;        // carries the bold RSVP-by date
-
-/* Like applyTeaPai: destructive, flag-driven, and the flag now comes from the
-   Sheet, so this waits for a definitive answer instead of a default. */
-function applyPentamoo () {
-  if (PENTAMOO) {
-    attending = WISHES_ONLY_STATUS;
-    $('#attend-field').remove();
-    paxField.remove();
-    step2.remove();
-    nextBtn.remove();
-    wishField.hidden = false;
-    /* The field label would be the third "WISHES" on one screen, under an
-       eyebrow and a heading that both already say it. */
-    const wishLabel = $('.field-label', wishField);
-    if (wishLabel) wishLabel.remove();
-    submit1.hidden   = false;
-    submit1.textContent = 'SEND WISHES';
-    $('#rsvp-eyebrow').textContent = 'WISHES';
-    rsvpTitle.textContent = 'SEND YOUR WISHES';
-    rsvpLede.textContent  = 'We would love to hear from you. Leave us a note and we will carry it with us on the day.';
-    const link = $('.nav-menu a[href="#rsvp"]');
-    if (link) link.textContent = 'Wishes';
-  }
-
-  /* No ?to= and no resolved invitation means we cannot know who this is, so
-     fall back to asking. A resolved one never shows the field. */
-  nameField.hidden = !!GUEST;
-
-  TITLE_STEP1 = rsvpTitle.textContent;
-  LEDE_STEP1  = rsvpLede.innerHTML;
+if (PENTAMOO) {
+  attending = WISHES_ONLY_STATUS;
+  $('#attend-field').remove();
+  paxField.remove();
+  step2.remove();
+  nextBtn.remove();
+  wishField.hidden = false;
+  /* The field label would be the third "WISHES" on one screen, under an
+     eyebrow and a heading that both already say it. */
+  const wishLabel = $('.field-label', wishField);
+  if (wishLabel) wishLabel.remove();
+  submit1.hidden   = false;
+  submit1.textContent = 'SEND WISHES';
+  $('#rsvp-eyebrow').textContent = 'WISHES';
+  rsvpTitle.textContent = 'SEND YOUR WISHES';
+  rsvpLede.textContent  = 'We would love to hear from you. Leave us a note and we will carry it with us on the day.';
+  const link = $('.nav-menu a[href="#rsvp"]');
+  if (link) link.textContent = 'Wishes';
 }
 
-function buildPaxOptions () {
-  paxSel.innerHTML = '';
-  for (let i = 1; i <= MAX_PAX; i++) {
-    paxSel.insertAdjacentHTML('beforeend', `<option value="${i}">${i}</option>`);
-  }
-  paxSel.value = String(MAX_PAX);
+/* Captured after the block above so EDIT RESPONSE restores whichever wording
+   this invitation actually opened with, not the RSVP one it never saw. */
+const TITLE_STEP1 = rsvpTitle.textContent;
+const LEDE_STEP1  = rsvpLede.innerHTML;      // carries the bold RSVP-by date
+
+for (let i = 1; i <= MAX_PAX; i++) {
+  paxSel.insertAdjacentHTML('beforeend', `<option value="${i}">${i}</option>`);
 }
+paxSel.value = String(MAX_PAX);
 
 function fail (msg) {
   note.textContent = msg;
@@ -801,26 +711,20 @@ editBtn.addEventListener('click', () => {
   showStep(1);
 });
 
-/* What this invitation already said, if anything. It arrives with the ?i=
-   lookup rather than in a request of its own — the invitation had to be
-   resolved before we knew whose reply to ask for anyway, so making it a
-   second round trip would have doubled the Apps Script wait for nothing.
-   Anyone who has started answering in the meantime keeps their half-filled
-   form. */
-function showReply (reply) {
-  if (!reply || !reply.found || touched) return;
-  savedNames = String(reply.guests || '').split(',').map(n => n.trim()).filter(Boolean);
-  showAnswered(reply);
-}
-
-/* Legacy ?to= links have no token to look up, so they still ask directly. */
-async function loadReplyByName () {
-  if (!API_URL || !GUEST || TOKEN) return;
+/* On a return visit, ask the Sheet what this invitation already said. Anyone
+   who has started answering in the meantime keeps their half-filled form. */
+async function loadReply () {
+  if (!API_URL || !GUEST) return;
   try {
-    const res = await fetch(`${API_URL}?action=status&key=${encodeURIComponent(GUEST)}`);
-    showReply(await res.json());
+    const res  = await fetch(`${API_URL}?action=status&key=${encodeURIComponent(GUEST)}`);
+    const data = await res.json();
+    if (data && data.found && !touched) {
+      savedNames = String(data.guests || '').split(',').map(n => n.trim()).filter(Boolean);
+      showAnswered(data);
+    }
   } catch (err) { /* leave the blank form in place */ }
 }
+loadReply();
 
 /* ═══════════ 8 · WISHES ═══════════ */
 
@@ -894,58 +798,3 @@ function trackOpen () {
     body: JSON.stringify({ action: 'open', key: GUEST })
   }).catch(() => {});
 }
-
-/* ═══════════ 11 · INVITATION HANDOVER ═══════════ */
-
-/* Everything above defaults to "we do not know who this is". This is where the
-   answer lands.
-   The destructive gates run exactly once, on the first definitive answer we
-   get, because they cannot be undone — see applyTeaPai. */
-let gatesApplied = false;
-
-function adopt (inv) {
-  GUEST    = inv.key || GUEST;
-  MAX_PAX  = Math.max(1, Number(inv.max) || MAX_PAX);
-  TEA_PAI  = inv.teapai === true;
-  PENTAMOO = inv.pentamoo === true;
-}
-
-function applyInvitation (inv) {
-  if (inv) adopt(inv);
-  applyGuestName();
-  if (!gatesApplied) {
-    gatesApplied = true;
-    buildPaxOptions();
-    applyTeaPai();
-    applyPentamoo();
-  }
-  if (inv) showReply(inv.reply);
-}
-
-const cached = cachedInvite();
-if (cached) applyInvitation(cached);
-
-invitePromise.then(inv => {
-  if (!inv) {
-    /* No token, or the lookup failed or found nothing. Whatever the URL said
-       stands, which for a stranger is: no name, two seats, no flags. */
-    if (!gatesApplied) applyInvitation(null);
-    loadReplyByName();
-    return;
-  }
-
-  /* Cached gating is already in the DOM and cannot be rebuilt in place, so if
-     the Sheet has changed underneath it, start over rather than show a page
-     that is half one invitation and half another. Guarded so a cache that
-     refuses to persist cannot turn this into a reload loop. */
-  if (cached && (cached.teapai !== inv.teapai ||
-                 cached.pentamoo !== inv.pentamoo ||
-                 Number(cached.max) !== Number(inv.max))) {
-    if (!sessionStorage.getItem('inv-reloaded')) {
-      try { sessionStorage.setItem('inv-reloaded', '1'); } catch (err) {}
-      location.reload();
-      return;
-    }
-  }
-  applyInvitation(inv);
-});
