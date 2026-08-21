@@ -138,8 +138,16 @@ rather than a pinned `maps.app.goo.gl` short link.
   The strip is capped at 420px from the tablet breakpoint up: two 2:3 portraits
   across a full desktop column would stand 465px tall and push the swatches and
   caption off a 768px-high screen.
-- Gallery photos (`g01`–`g14.jpg`) are built by template string in `main.js`,
+- Gallery photos (`g01`–`g18.webp`) are built by template string in `main.js`,
   not written out in the markup — a plain filename grep will not find them.
+  1100px on the long edge: the lightbox opens them at up to 86vh, where the
+  old 900px was soft. 18 of them still total 1.65MB, less than the 14 JPEGs
+  they replaced. `g01`–`g09` are the top marquee row, `g10`–`g18` the bottom,
+  ordered villa → countryside → evening city with three landscapes in each row
+  so neither is all portraits. `g18` is also the closing page background.
+- The marquee images deliberately carry NO `data-src`. `loadPagePhotos()`
+  sweeps every `img[data-src]` on the page and strips the attribute, which used
+  to leave the lightbox reading `undefined` and opening photo 1 every time.
 - Bride and groom portraits are 1200x1800 (2:3). Their crop is anchored with
   `object-position` so a wide desktop viewport does not cut the faces off;
   phones crop these horizontally, so the vertical anchor has no effect there.

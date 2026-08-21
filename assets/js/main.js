@@ -266,14 +266,21 @@ function armReveals () {
 
 /* ═══════════ 6 · GALLERY ═══════════ */
 
-const PHOTOS = Array.from({ length: 14 }, (_, i) => `assets/img/g${String(i + 1).padStart(2, '0')}.jpg`);
-const rowA = PHOTOS.slice(0, 7);
-const rowB = PHOTOS.slice(7);
+/* Built by template string, so a filename grep will not find these — see the
+   Media notes in the README before assuming they are unused. */
+const PHOTOS = Array.from({ length: 18 }, (_, i) => `assets/img/g${String(i + 1).padStart(2, '0')}.webp`);
+const rowA = PHOTOS.slice(0, 9);
+const rowB = PHOTOS.slice(9);
 
 function fillRow (el, list) {
   /* the list is laid down twice so the wrap at the halfway mark is invisible */
+  /* No data-src here. loadPagePhotos() sweeps every img[data-src] on the page
+     and strips the attribute once the cover is done — these images already
+     carry a real src, so all that did was leave the click handler reading an
+     undefined dataset.src, which indexOf turned into -1 and the lightbox
+     turned into "always open the first photo". */
   el.innerHTML = [...list, ...list]
-    .map(src => `<img src="${src}" alt="" loading="lazy" data-src="${src}">`).join('');
+    .map(src => `<img src="${src}" alt="" loading="lazy">`).join('');
 }
 fillRow($('#row-a'), rowA);
 fillRow($('#row-b'), rowB);
@@ -374,7 +381,9 @@ $$('.marquee').forEach(row => {
 
   $$('img', row).forEach(img => img.addEventListener('click', () => {
     if (swiped) { swiped = false; return; }
-    openLightbox(img.dataset.src);
+    /* getAttribute, not .src — the property resolves to an absolute URL and
+       would never match the relative paths in PHOTOS. */
+    openLightbox(img.getAttribute('src'));
   }));
 });
 $('#lb-close').addEventListener('click', () => { lb.hidden = true; });
