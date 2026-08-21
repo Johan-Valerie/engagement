@@ -240,7 +240,10 @@ const music  = $('#music');
 const mBtn   = $('#music-toggle');
 
 function startMusic () {
-  music.volume = 0.55;
+  /* 0.46, not the 0.55 this was originally tuned to: the current track is
+     mastered 1.6 LU louder than the one it replaced (-9.5 vs -11.1 LUFS),
+     so the same number would have played it noticeably louder. */
+  music.volume = 0.46;
   music.play().catch(() => mBtn.classList.add('paused'));
 }
 mBtn.addEventListener('click', () => {

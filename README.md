@@ -166,6 +166,14 @@ rather than a pinned `maps.app.goo.gl` short link.
 - Bride and groom portraits are 1200x1800 (2:3). Their crop is anchored with
   `object-position` so a wide desktop viewport does not cut the faces off;
   phones crop these horizontally, so the vertical anchor has no effect there.
+- `soundtrack.mp3` is transcoded from `Media/Song.webm` (Opus). It ships as MP3
+  ONLY, deliberately: iOS Safari does not play WebM audio, and Playwright's
+  WebKit is not a safe proxy for that question — its Windows build has its own
+  media stack rather than Apple's, and it happily reported
+  `canPlayType('audio/webm')` as "probably" and played the file. Trusting that
+  would have meant silent music on an iPhone.
+- Volume is 0.46 rather than the 0.55 the site was first tuned to: the current
+  track is mastered 1.6 LU louder than the one it replaced (-9.5 vs -11.1 LUFS).
 - Fonts are Google-hosted stand-ins for the reference's commercial faces:
   Playfair Display (display), Pinyon Script (script), Poppins (UI), Cormorant.
 - **Milton One Bold** is self-hosted in `assets/fonts/` — it is not a Google
