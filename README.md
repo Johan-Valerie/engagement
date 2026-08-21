@@ -113,9 +113,11 @@ and the Google Maps links, currently a generic search URL rather than a pinned
 
 - Cover/hero video ships as **two encodes** — `cover-portrait.mp4` (9:16, phones)
   and `cover-landscape.mp4` (16:9, desktop), switched by `<source media>`.
-- Gallery photos are reused from the wedding shoot.
-- `dress-code.png` had a checkerboard baked into its pixels in the original file;
-  the version here has been keyed to real transparency.
+- Gallery photos (`g01`–`g14.jpg`) are built by template string in `main.js`,
+  not written out in the markup — a plain filename grep will not find them.
+- Bride and groom portraits are 1200x1800 (2:3). Their crop is anchored with
+  `object-position` so a wide desktop viewport does not cut the faces off;
+  phones crop these horizontally, so the vertical anchor has no effect there.
 - Fonts are Google-hosted stand-ins for the reference's commercial faces:
   Playfair Display (display), Pinyon Script (script), Poppins (UI), Cormorant.
 - **Milton One Bold** is self-hosted in `assets/fonts/` — it is not a Google

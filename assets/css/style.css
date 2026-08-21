@@ -110,6 +110,12 @@ a{color:inherit;text-decoration:none}
    band and decapitates the couple. Anchoring the crop high keeps faces in frame.
    No effect on phones, where the portrait image has no vertical overflow.     */
 #cover-bg{object-position:50% 64%}   /* couple sits ~59% down the new aerial photo */
+/* Same story on the two profile portraits: cover-fit on a wide desktop viewport
+   shows only a middle band of a 2:3 image, and the default 50% cut the top of
+   Johan's head off. Anchored so both faces keep headroom. Phones crop these
+   horizontally, not vertically, so nothing moves there. */
+#groom .bg-img{object-position:50% 22%}
+#bride .bg-img{object-position:50% 38%}
 
 .bg-scrim{
   position:absolute;inset:0;z-index:1;
