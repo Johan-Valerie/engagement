@@ -151,6 +151,15 @@ a{color:inherit;text-decoration:none}
   font-size:14px;line-height:1.65;color:rgba(255,255,255,.88);
   margin:14px 0 0;max-width:46ch;
 }
+/* .lede caps its measure at 46ch for readability. In a left-aligned column
+   (RSVP) that correctly leaves it flush left. In a centred one the column grows
+   past 46ch on a desktop screen, and the paragraph then hangs ~120px left of
+   the heading centred above it. A phone column is narrower than 46ch, so the
+   paragraph fills it and nothing looks wrong — which is why this only ever
+   showed on a PC. Longhand rather than margin-inline, for older Safari. */
+.hero .lede,.dresscode .lede,.gift .lede,.closing .lede{
+  margin-left:auto;margin-right:auto;
+}
 /* body sits at weight 300, and the UA's `bolder` only lifts that to 400 —
    not enough to read as emphasis. */
 .lede strong{font-weight:600;color:#fff}
