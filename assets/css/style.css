@@ -84,7 +84,14 @@ body{
 }
 #main::-webkit-scrollbar{display:none}
 
-img{max-width:100%;display:block}
+/* height:auto is not decoration. An HTML width=/height= attribute becomes a CSS
+   presentational hint, which loses to any author rule - so a rule that sets only
+   width leaves the attribute's height standing and the image renders at
+   width x attribute-height, i.e. squashed. .closing-mark hit exactly that.
+   Declaring it here means every image derives its height from its own ratio
+   unless something later deliberately overrides it (.bg-img, .marquee img and
+   .nav-mono all set a height with higher specificity and are unaffected). */
+img{max-width:100%;height:auto;display:block}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 a{color:inherit;text-decoration:none}
 
